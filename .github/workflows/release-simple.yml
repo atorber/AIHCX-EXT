@@ -1,4 +1,4 @@
-name: Build and Release Extension
+name: Build and Release Extension (Simple)
 
 on:
   push:
@@ -9,8 +9,6 @@ on:
 # 设置权限
 permissions:
   contents: write  # 允许创建和上传release
-  packages: write  # 允许上传包
-  issues: write    # 允许创建issues（如果需要）
 
 jobs:
   build-and-release:
