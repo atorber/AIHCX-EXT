@@ -41,7 +41,12 @@ const UnsupportedPage: React.FC<UnsupportedPageProps> = ({ currentUrl }) => {
       <div className="supported-pages-container">
         <h3 className="supported-title">🎯 支持的功能页面：</h3>
         <ul className="supported-pages">
-          {Object.entries(urlPatterns).map(([url, name]) => (
+          {Object.entries(urlPatterns).reduce((acc: [string, string][], [url, name]) => {
+            if (!acc.find(item => item[1] === name)) {
+              acc.push([url, name]);
+            }
+            return acc;
+          }, []).map(([url, name]) => (
             <li key={url} className="supported-item">
               <span className="item-name">• {name}</span>
               {name === '任务列表' && (
