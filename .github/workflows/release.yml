@@ -1,0 +1,148 @@
+name: Build and Release Extension
+
+on:
+  push:
+    tags:
+      - 'v*'  # 当推送以v开头的标签时触发
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 获取完整历史记录用于生成changelog
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Type check
+      run: npm run type-check
+      
+    - name: Build extension
+      run: npm run build
+      
+    - name: Package extension
+      run: npm run package
+      
+    - name: Generate Changelog
+      id: changelog
+      run: |
+        # 获取上一个标签
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+        
+        if [ -z "$PREV_TAG" ]; then
+          echo "这是第一个发布版本"
+          CHANGELOG="## 🎉 首次发布
+        
+        ### 功能特性
+        - 支持AIHC控制台页面自动识别
+        - 生成CLI命令、JSON参数、YAML参数
+        - 提供API文档查看功能
+        - 支持多种页面类型处理
+        - 现代化的React界面设计
+        - 响应式布局，支持不同屏幕尺寸"
+        else
+          echo "生成从 $PREV_TAG 到 ${{ github.ref_name }} 的变更日志"
+          # 生成简单的变更日志
+          CHANGELOG="## 📝 更新日志
+        
+        ### 从 $PREV_TAG 到 ${{ github.ref_name }} 的变更
+        
+        \`\`\`
+        $(git log --oneline $PREV_TAG..HEAD)
+        \`\`\`"
+        fi
+        
+        # 将changelog写入文件
+        echo "$CHANGELOG" > CHANGELOG_TEMP.md
+        
+        # 设置输出
+        {
+          echo "changelog<<EOF"
+          echo "$CHANGELOG"
+          echo "EOF"
+        } >> $GITHUB_OUTPUT
+        
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: AIHC助手浏览器扩展 ${{ github.ref_name }}
+        body: |
+          ## 🚀 AIHC助手浏览器扩展 ${{ github.ref_name }}
+          
+          ${{ steps.changelog.outputs.changelog }}
+          
+          ### 📦 安装说明
+          1. 下载 `aihc-helper-extension-${{ github.ref_name }}.zip` 文件
+          2. 解压缩文件到任意目录
+          3. 打开Chrome浏览器，进入 `chrome://extensions/`
+          4. 开启右上角的"开发者模式"
+          5. 点击"加载已解压的扩展程序"
+          6. 选择解压后的文件夹
+          7. 扩展程序将自动安装并启用
+          
+          ### ✨ 功能特性
+          - 🎯 **智能页面识别**: 自动识别AIHC控制台的各种页面
+          - 🔧 **CLI命令生成**: 一键生成对应的命令行工具命令
+          - 📄 **参数格式化**: 支持JSON和YAML格式的参数生成
+          - 📚 **API文档**: 集成相关API文档查看功能
+          - 🎨 **现代界面**: 基于React的现代化用户界面
+          - 📱 **响应式设计**: 适配不同屏幕尺寸
+          
+          ### 🛠️ 技术栈
+          - React 18 + TypeScript
+          - Vite 构建工具
+          - Chrome Extension Manifest V3
+          - 百度云SDK集成
+          
+          ### 📋 系统要求
+          - Chrome 88+ 或基于Chromium的浏览器
+          - 支持AIHC控制台访问权限
+          
+          ### 🐛 问题反馈
+          如果您在使用过程中遇到任何问题，请通过以下方式反馈：
+          - [GitHub Issues](https://github.com/${{ github.repository }}/issues)
+          - 邮箱联系维护者
+          
+          ### 📄 许可证
+          本项目采用 [MIT License](https://github.com/${{ github.repository }}/blob/main/LICENSE)
+        draft: false
+        prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+        
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./aihc-helper-extension-${{ github.ref_name }}.zip
+        asset_name: aihc-helper-extension-${{ github.ref_name }}.zip
+        asset_content_type: application/zip
+        
+    - name: Upload Extension Files
+      uses: actions/upload-artifact@v4
+      with:
+        name: extension-files-${{ github.ref_name }}
+        path: |
+          dist/
+          aihc-helper-extension-${{ github.ref_name }}.zip
+        retention-days: 30
+        
+    - name: Cleanup
+      run: |
+        rm -f CHANGELOG_TEMP.md
+        rm -f aihc-helper-extension-*.zip

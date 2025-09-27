@@ -8,7 +8,10 @@
     "build": "tsc && vite build --mode production && npm run generate-icons",
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-icons.js",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "package": "node scripts/package-extension.js",
+    "test-release": "node scripts/test-release.js",
+    "release": "npm run test-release"
   },
   "dependencies": {
     "@baiducloud/sdk": "^1.0.3",
