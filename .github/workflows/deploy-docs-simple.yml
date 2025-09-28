@@ -38,9 +38,9 @@ jobs:
           # 复制所有文档文件
           cp -r .qoder/repowiki/zh/content/* dist-docs/content/
           
-          # 创建文档索引
+          # 创建文档导航索引
           echo "# 生成文档导航索引"
-          cat > build-nav.js << 'NAVEOF'
+          cat > build-nav.cjs << 'NAVEOF'
           const fs = require('fs');
           const path = require('path');
           
@@ -90,7 +90,7 @@ jobs:
           console.log('文档导航生成完成');
           NAVEOF
           
-          node build-nav.js
+          node build-nav.cjs
           
           # 生成主页HTML
           cat > dist-docs/index.html << 'HTMLEOF'
