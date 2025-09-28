@@ -108,7 +108,7 @@ class AIHCApiService {
       
       // 尝试从隐藏字段获取
       const hiddenInputs = document.querySelectorAll('input[type="hidden"]');
-      for (const input of hiddenInputs) {
+      for (const input of Array.from(hiddenInputs)) {
         const name = (input as HTMLInputElement).name || (input as HTMLInputElement).id;
         const value = (input as HTMLInputElement).value;
         if (name && (name.toLowerCase().includes('token') || name.toLowerCase().includes('auth') || name.toLowerCase().includes('csrf')) && value) {
@@ -608,7 +608,7 @@ class AIHCApiService {
         status: response.status,
         statusText: response.statusText,
         ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
+        headers: Object.fromEntries(Array.from(response.headers.entries()))
       });
 
       if (!response.ok) {
@@ -816,7 +816,7 @@ class AIHCApiService {
     try {
       const response = await fetch(url);
       console.log('存储信息API响应状态:', response.status);
-      console.log('响应头:', Object.fromEntries(response.headers.entries()));
+      console.log('响应头:', Object.fromEntries(Array.from(response.headers.entries())));
       
       if (!response.ok) {
         const errorText = await response.text();

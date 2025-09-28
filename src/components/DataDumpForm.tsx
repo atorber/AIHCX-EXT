@@ -44,25 +44,15 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       const savedConfig = localStorage.getItem('aihc_data_dump_config');
       const savedTemplate = localStorage.getItem('aihc_data_dump_template');
       
-      console.log('[DataDumpForm] 检查localStorage数据:', {
-        savedConfig: !!savedConfig,
-        savedTemplate: !!savedTemplate,
-        isRedirected: isRedirected
-      });
-      
       if (savedConfig && savedTemplate) {
-        console.log('[DataDumpForm] 发现保存的数据，设置isRedirected为true');
         setIsRedirected(true);
         // 从localStorage恢复配置
         try {
           const config = JSON.parse(savedConfig);
-          console.log('[DataDumpForm] 恢复配置:', config);
           setConfig(config);
         } catch (error) {
           console.error('恢复配置失败:', error);
         }
-      } else {
-        console.log('[DataDumpForm] 没有发现保存的数据');
       }
     };
 
@@ -87,46 +77,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
     };
   }, []);
   
-  // 多种调试输出方式
-  console.debug('[DataDumpForm] 🔧 组件初始化');
-  console.warn('[DataDumpForm] ⚠️ 组件初始化 - WARN级别');
-  console.error('[DataDumpForm] ❌ 组件初始化 - ERROR级别（用于调试）');
-  console.info('[DataDumpForm] ℹ️ 组件初始化 - INFO级别');
-  
-  // 直接写入DOM元素用于调试
-  if (typeof document !== 'undefined') {
-    const debugDiv = document.createElement('div');
-    debugDiv.style.cssText = 'position:fixed;top:0;right:0;background:red;color:white;padding:5px;z-index:99999;';
-    debugDiv.textContent = `DataDumpForm初始化: ${new Date().toLocaleTimeString()}`;
-    document.body.appendChild(debugDiv);
-    setTimeout(() => {
-      if (document.body.contains(debugDiv)) {
-        document.body.removeChild(debugDiv);
-      }
-    }, 5000);
-  }
-  
-  // 写入localStorage作为调试记录
-  if (typeof localStorage !== 'undefined') {
-    try {
-      const debugLog = {
-        component: 'DataDumpForm',
-        action: 'initialized',
-        timestamp: new Date().toISOString(),
-        props: { datasetId, category, hasOnSubmit: !!onSubmit }
-      };
-      localStorage.setItem('aihc_debug_latest', JSON.stringify(debugLog));
-    } catch (e) {
-      // localStorage可能被禁用
-    }
-  }
-  
-  console.debug('[DataDumpForm] Props:', {
-    datasetId,
-    category,
-    onSubmit: !!onSubmit,
-    onCancel: !!onCancel
-  });
   
   const [config, setConfig] = useState<DataDumpConfig>({
     resourcePoolType: '自运维',
@@ -162,7 +112,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
     
     if (!requestType || requestType === 'resourcePools') {
       if (manager.resourcePoolsController) {
-        console.log('DataDumpForm: 取消之前的资源池列表请求');
         manager.resourcePoolsController.abort();
         manager.resourcePoolsController = null;
       }
@@ -170,7 +119,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
     
     if (!requestType || requestType === 'queues') {
       if (manager.queuesController) {
-        console.log('DataDumpForm: 取消之前的队列列表请求');
         manager.queuesController.abort();
         manager.queuesController = null;
       }
@@ -178,7 +126,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
     
     if (!requestType || requestType === 'pfsInstances') {
       if (manager.pfsInstancesController) {
-        console.log('DataDumpForm: 取消之前的PFS实例请求');
         manager.pfsInstancesController.abort();
         manager.pfsInstancesController = null;
       }
@@ -188,30 +135,12 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
   // 清理资源，防止内存泄漏
   useEffect(() => {
     return () => {
-      console.log('DataDumpForm: 组件卸载，清理所有请求');
       cancelPreviousRequests();
     };
   }, []);
 
   // 初始化加载：数据集信息和资源池列表
   useEffect(() => {
-    console.debug('[DataDumpForm] useEffect 初始化加载触发');
-    console.warn('[DataDumpForm] ⚠️ useEffect 初始化加载触发 - WARN');
-    console.error('[DataDumpForm] ❌ useEffect 初始化加载触发 - ERROR（用于调试）');
-    console.debug('[DataDumpForm] 数据集ID:', datasetId);
-    
-    // 在window上设置调试函数
-    if (typeof window !== 'undefined') {
-      (window as any).debugDataDumpForm = {
-        config,
-        datasetId,
-        category,
-        onSubmit: !!onSubmit,
-        timestamp: new Date().toISOString()
-      };
-      console.debug('[DataDumpForm] 调试信息已设置到 window.debugDataDumpForm');
-    }
-    
     loadDatasetInfo();
     loadResourcePools();
   }, []);
@@ -228,16 +157,13 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
   // 加载数据集信息
   const loadDatasetInfo = async () => {
     if (!datasetId) {
-      console.warn('DataDumpForm: datasetId 为空，跳过数据集信息加载');
       return;
     }
 
-    console.log('DataDumpForm: 开始加载数据集信息, datasetId:', datasetId);
     setIsLoading(true);
     
     try {
       const info = await aihcApiService.getDatasetInfo(datasetId);
-      console.log('DataDumpForm: 数据集信息加载成功:', info);
       
       setDatasetInfo({
         datasetName: info.datasetName,
@@ -246,10 +172,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       
       // 自动填充存储路径（去除bos:前缀）
       const defaultStoragePath = convertBosPathToStoragePath(info.datasetStoragePath);
-      console.log('DataDumpForm: 自动填充存储路径:', {
-        original: info.datasetStoragePath,
-        converted: defaultStoragePath
-      });
       
       setConfig(prev => ({
         ...prev,
@@ -272,8 +194,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       
       // 检查是否需要更新
       if (manager.currentResourcePoolType !== config.resourcePoolType) {
-        console.log(`DataDumpForm: 资源池类型变更: ${manager.currentResourcePoolType} -> ${config.resourcePoolType}`);
-        
         // 取消之前的所有请求
         cancelPreviousRequests();
         
@@ -318,7 +238,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
     
     // 递增资源池请求序列号
     const currentSequence = ++requestManagerRef.current.resourcePoolsSequence;
-    console.log(`DataDumpForm: 开始加载资源池列表 - 序列号: ${currentSequence}, 类型: ${config.resourcePoolType}`);
     
     setIsLoading(true);
     try {
@@ -332,29 +251,24 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       
       // 检查请求是否已被取消或过时
       if (controller.signal.aborted) {
-        console.log(`DataDumpForm: 资源池列表请求被取消 - 序列号: ${currentSequence}`);
         return;
       }
       
       // 检查是否为最新的请求
       if (currentSequence !== requestManagerRef.current.resourcePoolsSequence) {
-        console.log(`DataDumpForm: 资源池列表请求已过时 - 当前序列号: ${currentSequence}, 最新序列号: ${requestManagerRef.current.resourcePoolsSequence}`);
         return;
       }
       
-      console.log(`DataDumpForm: 成功加载资源池列表 - 序列号: ${currentSequence}, 数量: ${pools.length}`);
       setResourcePools(pools);
       setError(''); // 清除错误
     } catch (err) {
       // 检查是否为取消请求
       if (err instanceof Error && err.message === 'REQUEST_CANCELLED') {
-        console.log(`DataDumpForm: 资源池列表请求被取消 - 序列号: ${currentSequence}`);
         return;
       }
       
       // 检查是否为最新的请求
       if (currentSequence !== requestManagerRef.current.resourcePoolsSequence) {
-        console.log(`DataDumpForm: 资源池列表请求已过时，忽略错误 - 当前序列号: ${currentSequence}`);
         return;
       }
       
@@ -384,7 +298,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
     
     // 递增队列请求序列号
     const currentSequence = ++requestManagerRef.current.queuesSequence;
-    console.log(`DataDumpForm: 开始加载队列列表 - 序列号: ${currentSequence}, 资源池ID: ${resourcePoolId}`);
     
     setIsLoading(true);
     try {
@@ -399,28 +312,23 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       
       // 检查请求是否已被取消或过时
       if (controller.signal.aborted) {
-        console.log(`DataDumpForm: 队列列表请求被取消 - 序列号: ${currentSequence}`);
         return;
       }
       
       // 检查是否为最新的请求
       if (currentSequence !== requestManagerRef.current.queuesSequence) {
-        console.log(`DataDumpForm: 队列列表请求已过时 - 当前序列号: ${currentSequence}, 最新序列号: ${requestManagerRef.current.queuesSequence}`);
         return;
       }
       
-      console.log(`DataDumpForm: 成功加载队列列表 - 序列号: ${currentSequence}, 数量: ${queueList.length}`);
       setQueues(queueList);
     } catch (err) {
       // 检查是否为取消请求
       if (err instanceof Error && err.message === 'REQUEST_CANCELLED') {
-        console.log(`DataDumpForm: 队列列表请求被取消 - 序列号: ${currentSequence}`);
         return;
       }
       
       // 检查是否为最新的请求
       if (currentSequence !== requestManagerRef.current.queuesSequence) {
-        console.log(`DataDumpForm: 队列列表请求已过时，忽略错误 - 当前序列号: ${currentSequence}`);
         return;
       }
       
@@ -450,46 +358,34 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
     
     // 递增PFS实例请求序列号
     const currentSequence = ++requestManagerRef.current.pfsInstancesSequence;
-    console.log(`DataDumpForm: 开始加载PFS实例 - 序列号: ${currentSequence}, 资源池ID: ${resourcePoolId}, 类型: ${config.resourcePoolType}`);
     
     setIsLoading(true);
     try {
       const resourcePoolType = config.resourcePoolType === '自运维' ? 'common' : 'serverless';
-      console.log(`DataDumpForm: 转换后的资源池类型: ${resourcePoolType}`);
       
       const pfsList = await aihcApiService.getPFSInstances(resourcePoolId, resourcePoolType, controller);
       
       // 检查请求是否已被取消或过时
       if (controller.signal.aborted) {
-        console.log(`DataDumpForm: PFS实例请求被取消 - 序列号: ${currentSequence}`);
         return;
       }
       
       // 检查是否为最新的请求
       if (currentSequence !== requestManagerRef.current.pfsInstancesSequence) {
-        console.log(`DataDumpForm: PFS实例请求已过时 - 当前序列号: ${currentSequence}, 最新序列号: ${requestManagerRef.current.pfsInstancesSequence}`);
         return;
       }
-      
-      console.log(`DataDumpForm: 成功获取PFS实例列表 - 序列号: ${currentSequence}, 数量: ${pfsList.length}`);
-      console.log('DataDumpForm: PFS实例详情:', pfsList);
       
       setPfsInstances(pfsList);
       setError(''); // 清除之前的错误
       
-      if (pfsList.length === 0) {
-        console.warn('DataDumpForm: 该资源池下没有可用的PFS实例');
-      }
     } catch (err) {
       // 检查是否为取消请求
       if (err instanceof Error && err.message === 'REQUEST_CANCELLED') {
-        console.log(`DataDumpForm: PFS实例请求被取消 - 序列号: ${currentSequence}`);
         return;
       }
       
       // 检查是否为最新的请求
       if (currentSequence !== requestManagerRef.current.pfsInstancesSequence) {
-        console.log(`DataDumpForm: PFS实例请求已过时，忽略错误 - 当前序列号: ${currentSequence}`);
         return;
       }
       
@@ -498,12 +394,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       // 提供更详细的错误信息
       let errorMessage = '加载PFS实例失败';
       if (err instanceof Error) {
-        console.error('DataDumpForm: 错误详情:', {
-          name: err.name,
-          message: err.message,
-          stack: err.stack
-        });
-        
         if (err.message.includes('网络')) {
           errorMessage = '网络连接失败，请检查网络设置';
         } else if (err.message.includes('404')) {
@@ -648,7 +538,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         faultToleranceSwitch.click();
       }
 
-      console.log('任务表单填充完成');
     } catch (error) {
       console.error('填充表单失败:', error);
     }
@@ -656,75 +545,19 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     try {
-      // localStorage记录
-      if (typeof localStorage !== 'undefined') {
-        try {
-          const debugLog = {
-            component: 'DataDumpForm',
-            action: 'handleSubmit_triggered',
-            timestamp: new Date().toISOString(),
-            config: config
-          };
-          localStorage.setItem('aihc_debug_submit', JSON.stringify(debugLog));
-        } catch (e) {}
-      }
-      
-      // 多种调试输出方式
-      console.debug('[DataDumpForm] 🔥 ==> handleSubmit 被触发 [第一行] - DEBUG');
-      console.warn('[DataDumpForm] ⚠️ ==> handleSubmit 被触发 [第一行] - WARN');
-      console.error('[DataDumpForm] ❌ ==> handleSubmit 被触发 [第一行] - ERROR（用于调试）');
-      console.info('[DataDumpForm] ℹ️ ==> handleSubmit 被触发 [第一行] - INFO');
-      
-      // 在页面上显示调试信息
-      if (typeof document !== 'undefined') {
-        const debugDiv = document.createElement('div');
-        debugDiv.style.cssText = 'position:fixed;top:100px;right:0;background:green;color:white;padding:10px;z-index:99999;';
-        debugDiv.textContent = `handleSubmit触发: ${new Date().toLocaleTimeString()}`;
-        document.body.appendChild(debugDiv);
-        setTimeout(() => {
-          if (document.body.contains(debugDiv)) {
-            document.body.removeChild(debugDiv);
-          }
-        }, 5000);
-      }
-      
-      console.debug('[DataDumpForm] 事件对象:', e);
-      console.debug('[DataDumpForm] 当前配置:', JSON.stringify(config, null, 2));
-      console.debug('[DataDumpForm] onSubmit 函数是否存在:', !!onSubmit);
-      console.debug('[DataDumpForm] onSubmit 函数类型:', typeof onSubmit);
-      
       e.preventDefault();
-      console.debug('[DataDumpForm] 事件preventDefault已调用');
-      
       setIsSubmitting(true);
-      console.debug('[DataDumpForm] isSubmitting 设置为 true');
-      
       setError('');
-      console.debug('[DataDumpForm] error 已清空');
 
-      console.debug('[DataDumpForm] 开始调用 onSubmit 函数...');
       if (onSubmit) {
-        console.debug('[DataDumpForm] ✅ onSubmit 函数存在，开始执行');
         await onSubmit(config);
-        console.debug('[DataDumpForm] ✅ onSubmit 函数执行成功');
       } else {
-        console.error('[DataDumpForm] ❌ onSubmit 函数不存在！');
         throw new Error('onSubmit 函数未定义');
       }
     } catch (err) {
-      console.error('[DataDumpForm] ❌ handleSubmit 捕获到错误:', err);
-      console.debug('[DataDumpForm] 错误类型:', typeof err);
-      console.error('[DataDumpForm] 错误详情:', err instanceof Error ? {
-        name: err.name,
-        message: err.message,
-        stack: err.stack
-      } : '非 Error 对象');
-      
       const errorMessage = err instanceof Error ? err.message : '提交失败，请重试';
-      console.error('[DataDumpForm] 设置错误信息:', errorMessage);
       setError(errorMessage);
     } finally {
-      console.debug('[DataDumpForm] 设置 isSubmitting 为 false');
       setIsSubmitting(false);
     }
   };
@@ -733,29 +566,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
     setConfig(prev => ({ ...prev, ...updates }));
   };
 
-  // 渲染时的调试信息
-  console.debug('[DataDumpForm] 🟢 组件正在渲染 - DEBUG', {
-    timestamp: new Date().toISOString(),
-    datasetId,
-    category,
-    onSubmitExists: !!onSubmit,
-    configComplete: !!(config.resourcePoolId && config.queueId && config.pfsId && config.storagePath)
-  });
-  
-  console.warn('[DataDumpForm] ⚠️ 组件正在渲染 - WARN', {
-    timestamp: new Date().toISOString()
-  });
-  
-  console.error('[DataDumpForm] ❌ 组件正在渲染 - ERROR（用于调试）', {
-    timestamp: new Date().toISOString()
-  });
-
-  // 渲染时的调试信息
-  console.log('[DataDumpForm] 渲染状态:', {
-    isRedirected,
-    config: config,
-    timestamp: new Date().toISOString()
-  });
 
   return (
     <div className="data-dump-form">
@@ -784,14 +594,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       <form 
         onSubmit={handleSubmit} 
         className="dump-form"
-        onSubmitCapture={(e) => {
-          console.log('[DataDumpForm] 🟦 表单 onSubmitCapture 事件触发:', e);
-        }}
-        ref={(formRef) => {
-          if (formRef) {
-            console.log('[DataDumpForm] 📝 表单元素已挂载:', formRef);
-          }
-        }}
       >
         {/* 资源池类型 */}
         <div className="form-group">
@@ -971,46 +773,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
                 type="submit"
                 className="btn btn-primary"
                 disabled={isSubmitting || isLoading}
-                onClick={(e) => {
-                  // localStorage记录
-                  if (typeof localStorage !== 'undefined') {
-                    try {
-                      const debugLog = {
-                        component: 'DataDumpForm',
-                        action: 'button_clicked',
-                        timestamp: new Date().toISOString(),
-                        disabled: isSubmitting || isLoading
-                      };
-                      localStorage.setItem('aihc_debug_button', JSON.stringify(debugLog));
-                    } catch (e) {}
-                  }
-                  
-                  // 多种方式输出调试信息
-                  console.debug('[DataDumpForm] 🔥 提交按钮被点击 - DEBUG');
-                  console.warn('[DataDumpForm] ⚠️ 提交按钮被点击 - WARN');
-                  console.error('[DataDumpForm] ❌ 提交按钮被点击 - ERROR（用于调试）');
-                  console.info('[DataDumpForm] ℹ️ 提交按钮被点击 - INFO');
-                  
-                  // 尝试直接在页面上显示调试信息
-                  if (typeof document !== 'undefined') {
-                    const debugDiv = document.createElement('div');
-                    debugDiv.style.cssText = 'position:fixed;top:50px;right:0;background:blue;color:white;padding:10px;z-index:99999;';
-                    debugDiv.textContent = `按钮被点击: ${new Date().toLocaleTimeString()}`;
-                    document.body.appendChild(debugDiv);
-                    setTimeout(() => {
-                      if (document.body.contains(debugDiv)) {
-                        document.body.removeChild(debugDiv);
-                      }
-                    }, 5000);
-                  }
-                  
-                  console.debug('[DataDumpForm] 事件对象存在:', !!e);
-                  console.debug('[DataDumpForm] 按钮disabled状态:', isSubmitting || isLoading);
-                  console.debug('[DataDumpForm] isSubmitting:', isSubmitting);
-                  console.debug('[DataDumpForm] isLoading:', isLoading);
-                  console.debug('[DataDumpForm] 当前时间戳:', new Date().toISOString());
-                  // 注意：这里不要调用 e.preventDefault()，要让表单的 onSubmit 事件正常触发
-                }}
               >
                 {isSubmitting ? '提交中...' : '提交转储任务'}
               </button>
