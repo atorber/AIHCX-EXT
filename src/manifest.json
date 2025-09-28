@@ -42,6 +42,11 @@
     
     "permissions": ["storage", "activeTab", "tabs", "sidePanel", "notifications", "scripting"],
     
+    "host_permissions": [
+        "*://console.bce.baidu.com/*",
+        "*://aihc.bj.baidubce.com/*"
+    ],
+    
     "web_accessible_resources": [
       {
         "resources": ["content/*.css", "content/*.js", "chunks/*.js", "assets/icons/*"],

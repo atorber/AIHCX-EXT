@@ -36,6 +36,9 @@ export default defineConfig({
               html = html.replace(/href="[^"]*\/content\/([^"]+)"/, 'href="../content/$1"')
               // 添加sidebar.css引用
               html = html.replace('</head>', '  <link rel="stylesheet" href="./sidebar.css">\n</head>')
+            } else if (fileName.includes('options')) {
+              // options页面引用options目录的CSS
+              html = html.replace(/href="[^"]*\/content\/([^"]+)"/, 'href="./$1"')
             } else {
               html = html.replace(/href="[^"]*\/content\/([^"]+)"/, 'href="../content/$1"')
             }
@@ -112,6 +115,17 @@ export default defineConfig({
             )
           }
 
+          // 复制options.css到options目录
+          if (existsSync(resolve(__dirname, 'src/styles/options.css'))) {
+            if (!existsSync(resolve(__dirname, 'dist/options'))) {
+              mkdirSync(resolve(__dirname, 'dist/options'), { recursive: true })
+            }
+            copyFileSync(
+              resolve(__dirname, 'src/styles/options.css'),
+              resolve(__dirname, 'dist/options/style.css')
+            )
+          }
+
           // 确保content目录存在
           if (!existsSync(resolve(__dirname, 'dist/content'))) {
             mkdirSync(resolve(__dirname, 'dist/content'), { recursive: true })
@@ -153,8 +167,14 @@ export default defineConfig({
         assetFileNames: (assetInfo) => {
           const name = assetInfo.name || ''
           if (name.endsWith('.css')) {
-            // 将所有CSS文件输出到content目录
-            return 'content/[name][extname]'
+            // 根据入口文件决定CSS输出位置
+            if (assetInfo.name === 'style' && assetInfo.facadeModuleId?.includes('options')) {
+              return 'options/[name][extname]'
+            } else if (assetInfo.name?.includes('popup')) {
+              return 'popup/[name][extname]'
+            } else {
+              return 'content/[name][extname]'
+            }
           }
           return 'assets/[name]-[hash][extname]'
         },
