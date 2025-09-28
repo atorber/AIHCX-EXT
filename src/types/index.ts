@@ -32,6 +32,9 @@ export interface TaskParams {
   chatLoading?: boolean;
   chatError?: string;
   isDataDownloadPage?: boolean;
+  isDataDumpPage?: boolean;
+  datasetId?: string;
+  category?: string;
 }
 
 export interface Message {
@@ -69,3 +72,67 @@ export interface BaiduCredentials {
 }
 
 export type TabType = 'cli' | 'commandScript' | 'json' | 'yaml' | 'apiDocs' | 'chat';
+
+// 数据转储相关类型定义
+export interface DataDumpConfig {
+  resourcePoolType: '自运维' | '全托管';
+  resourcePoolId: string;
+  queueId: string;
+  pfsId: string;
+  storagePath: string;
+  originalStoragePath?: string; // 新增：原始存储路径（带bos:前缀）
+  datasetName?: string; // 数据集名称
+  datasetCategory?: string; // 数据集类别
+}
+
+export interface DataDumpTaskTemplate {
+  tensorboard: {
+    enable: boolean;
+    logPath: string;
+    serviceType: string;
+  };
+  autoCreatePVC: boolean;
+  priority: string;
+  isCustomDelete: boolean;
+  retentionPeriod: string;
+  retentionUnit: string;
+  isPolicy: boolean;
+  cpromId: string;
+  selectedRowKeys: string[];
+  pfsId: string;
+  imageType: string;
+  runningTimeoutStopTimeUnit: string;
+  visibleScope: number;
+  resourcePoolType: string;
+  jobFramework: string;
+  name: string;
+  command: string;
+  enabledHangDetection: boolean;
+  unconditionalFaultToleranceLimit: number;
+  enableReplace: boolean;
+  queue: string;
+  vpcId: string;
+  datasource: Array<{
+    type: string;
+    name?: string;
+    sourcePath?: string;
+    mountPath: string;
+    pfsId?: string;  // 为PFS类型数据源添加pfsId字段
+    options: any;
+  }>;
+  jobSpec: {
+    Master: {
+      image: string;
+      tag: string;
+      replicas: number;
+      env: Record<string, string>;
+      resource: any;
+      restartPolicy: string;
+    };
+  };
+  faultTolerance: boolean;
+  jobDistributed: boolean;
+  labels: Record<string, string>;
+  annotations: any;
+  workloadType: string;
+}

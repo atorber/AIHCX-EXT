@@ -619,50 +619,175 @@ if (document.readyState === 'complete') {
   window.addEventListener('load', initializePlugin);
 }
 
-// 监听URL变化
+// 监听URL变化 - 优化版本
 let lastUrl = window.location.href;
-new MutationObserver(() => {
+let urlChangeDebounceTimer: number | null = null;
+
+// 创建一个专门监听URL变化的函数
+const handleUrlChange = () => {
   const currentUrl = window.location.href;
   if (currentUrl !== lastUrl) {
+    console.log('[AIHC助手] 🔄 检测到URL变化:', {
+      from: lastUrl,
+      to: currentUrl,
+      timestamp: new Date().toISOString()
+    });
     lastUrl = currentUrl;
     
-    // 移除现有的组件（如果存在）
-    const existingToggle = document.getElementById('aihcx-helper-toggle');
-    
-    if (existingToggle) existingToggle.remove();
-    
-    // 在AIHC页面重新注入组件
-    if (isAIHCConsolePage()) {
-      try {
-        chrome.storage.local.get(['aihcx-helper-disabled'], (result) => {
-          try {
-            if (!result['aihcx-helper-disabled']) {
-              if (isDevelopment) {
-                log('URL变化，重新注入组件');
-              }
-              injectComponent();
-              loadConfig();
-            }
-          } catch (error) {
-            // 扩展上下文失效时的处理
-            if (error instanceof Error && error.message.includes('Extension context invalidated')) {
-              console.warn('[AIHC助手] 扩展上下文已失效，跳过组件注入');
-              return;
-            }
-            console.error('[AIHC助手] 组件注入失败:', error);
-          }
-        });
-      } catch (error) {
-        // 扩展上下文失效时的处理
-        if (error instanceof Error && error.message.includes('Extension context invalidated')) {
-          console.warn('[AIHC助手] 扩展上下文已失效，跳过存储访问');
-          return;
-        }
-        console.error('[AIHC助手] 存储访问失败:', error);
-      }
+    // 清除现有的防抖定时器
+    if (urlChangeDebounceTimer) {
+      clearTimeout(urlChangeDebounceTimer);
+      console.log('[AIHC助手] 🔄 清除现有防抖定时器');
     }
+    
+    // 设置防抖延迟
+    urlChangeDebounceTimer = window.setTimeout(() => {
+      console.log('[AIHC助手] ⏰ 防抖延迟结束，开始处理URL变化');
+      
+      // 移除现有的组件（如果存在）
+      const existingToggle = document.getElementById('aihcx-helper-toggle');
+      
+      if (existingToggle) {
+        console.log('[AIHC助手] 🗑️ 移除现有组件');
+        existingToggle.remove();
+      }
+      
+      // 在AIHC页面重新注入组件
+      if (isAIHCConsolePage()) {
+        try {
+          chrome.storage.local.get(['aihcx-helper-disabled'], (result) => {
+            try {
+              if (!result['aihcx-helper-disabled']) {
+                console.log('[AIHC助手] ✅ URL变化，重新注入组件');
+                injectComponent();
+                loadConfig();
+                
+                // 通知侧边栏页面内容已更新
+                notifySidebarPageChange(currentUrl);
+              } else {
+                console.log('[AIHC助手] ❌ 插件已禁用，跳过组件注入');
+              }
+            } catch (error) {
+              // 扩展上下文失效时的处理
+              if (error instanceof Error && error.message.includes('Extension context invalidated')) {
+                console.warn('[AIHC助手] ⚠️ 扩展上下文已失效，跳过组件注入');
+                return;
+              }
+              console.error('[AIHC助手] ❌ 组件注入失败:', error);
+            }
+          });
+        } catch (error) {
+          // 扩展上下文失效时的处理
+          if (error instanceof Error && error.message.includes('Extension context invalidated')) {
+            console.warn('[AIHC助手] ⚠️ 扩展上下文已失效，跳过存储访问');
+            return;
+          }
+          console.error('[AIHC助手] ❌ 存储访问失败:', error);
+        }
+      } else {
+        console.log('[AIHC助手] ℹ️ 非AIHC页面，不注入组件');
+      }
+    }, 300); // 300ms防抖延迟
   }
-}).observe(document, { subtree: true, childList: true });
+};
+
+// 通知侧边栏页面内容已更新
+const notifySidebarPageChange = (newUrl: string) => {
+  try {
+    console.log('[AIHC助手] 📡 发送页面变化通知:', {
+      url: newUrl,
+      timestamp: Date.now()
+    });
+    
+    // 发送消息给background script，通知页面变化
+    chrome.runtime.sendMessage({
+      action: 'pageChanged',
+      url: newUrl,
+      timestamp: Date.now()
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.warn('[AIHC助手] ⚠️ 通知页面变化失败:', chrome.runtime.lastError.message);
+      } else {
+        console.log('[AIHC助手] ✅ 已通知侧边栏页面变化:', response);
+      }
+    });
+  } catch (error) {
+    console.warn('[AIHC助手] ❌ 发送页面变化通知失败:', error);
+  }
+};
+
+// 使用多种方式监听URL变化
+// 1. MutationObserver - 优化配置，减少触发频率
+const urlObserver = new MutationObserver((mutations) => {
+  // 只监听可能影响URL的变化
+  const hasRelevantChanges = mutations.some(mutation => {
+    // 检查是否有影响路由的变化
+    if (mutation.type === 'childList') {
+      const target = mutation.target as Element;
+      // 主要关注大的容器元素和可能包含路由变化的元素
+      return target.tagName === 'BODY' || 
+             target.tagName === 'HTML' || 
+             target.classList?.contains('main-content') ||
+             target.classList?.contains('content') ||
+             target.classList?.contains('page-content') ||
+             target.classList?.contains('router-view') ||
+             target.id === 'root' ||
+             target.id === 'app' ||
+             target.id === 'main';
+    }
+    return false;
+  });
+  
+  if (hasRelevantChanges) {
+    console.log('[AIHC助手] 🔍 MutationObserver检测到相关DOM变化');
+    handleUrlChange();
+  }
+});
+
+// 配置观察器，仅监听必要的变化
+if (document.body) {
+  urlObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: false, // 不监听属性变化
+    attributeOldValue: false,
+    characterData: false,
+    characterDataOldValue: false
+  });
+  console.log('[AIHC助手] 🔍 MutationObserver已启动');
+} else {
+  console.warn('[AIHC助手] ⚠️ document.body不存在，无法启动MutationObserver');
+}
+
+// 2. popstate事件 - 监听浏览器前进/后退
+window.addEventListener('popstate', () => {
+  console.log('[AIHC助手] 🔙 检测到popstate事件（浏览器前进/后退）');
+  handleUrlChange();
+});
+
+// 3. pushstate/replacestate拦截 - 监听程序化导航
+const originalPushState = history.pushState;
+const originalReplaceState = history.replaceState;
+
+history.pushState = function(...args) {
+  console.log('[AIHC助手] 🖄 检测到pushState调用');
+  originalPushState.apply(history, args);
+  handleUrlChange();
+};
+
+history.replaceState = function(...args) {
+  console.log('[AIHC助手] 🔃 检测到replaceState调用');
+  originalReplaceState.apply(history, args);
+  handleUrlChange();
+};
+
+// 4. hashchange事件 - 监听hash变化
+window.addEventListener('hashchange', () => {
+  console.log('[AIHC助手] # 检测到hashchange事件');
+  handleUrlChange();
+});
+
+console.log('[AIHC助手] 🚀 所有URL变化监听器已启动');
 
 // 监听来自popup或background的消息
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

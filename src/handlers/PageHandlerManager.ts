@@ -4,6 +4,7 @@ import { PageHandler, HandlerContext } from './types';
 import {
   TaskDetailHandler,
   TaskListHandler,
+  CreateTaskHandler,
   ResourcePoolListHandler,
   ResourcePoolDetailHandler,
   QueueListHandler,
@@ -32,6 +33,7 @@ export class PageHandlerManager {
     // 任务相关页面
     this.handlers.set('任务详情', new TaskDetailHandler(this.context));
     this.handlers.set('任务列表', new TaskListHandler(this.context));
+    this.handlers.set('创建任务', new CreateTaskHandler(this.context));
 
     // 资源池相关页面
     this.handlers.set('自运维资源池列表', new ResourcePoolListHandler(this.context));
@@ -53,7 +55,8 @@ export class PageHandlerManager {
     this.handlers.set('模型版本列表', new ModelVersionsHandler(this.context));
     this.handlers.set('开发机列表', new DevelopmentMachinesHandler(this.context));
     this.handlers.set('在线服务部署详情', new OnlineServiceDeploymentDetailHandler(this.context));
-    this.handlers.set('数据下载', new DataDownloadHandler(this.context));
+    this.handlers.set('创建数据下载任务', new DataDownloadHandler(this.context));
+    this.handlers.set('数据下载任务详情', new DataDownloadHandler(this.context));
   }
 
   /**

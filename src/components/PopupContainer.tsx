@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { TaskParams, Message, PageInfo, TabType } from '../types';
+import { TaskParams, Message, PageInfo, TabType, DataDumpConfig, DataDumpTaskTemplate } from '../types';
 import { getCurrentTabInfo } from '../utils/pageDetection';
 import { copyToClipboard, saveToFile, openUrl, createMessage } from '../utils/helpers';
 import { PageHandlerManager } from '../handlers';
@@ -18,6 +18,45 @@ interface PopupContainerProps {
 }
 
 const PopupContainer: React.FC<PopupContainerProps> = () => {
+  // 全局错误监听
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('[PopupContainer] 🔥 全局错误捕获:', event.error);
+      console.debug('[PopupContainer] 错误消息:', event.message);
+      console.debug('[PopupContainer] 错误文件:', event.filename);
+      console.debug('[PopupContainer] 错误行号:', event.lineno);
+    };
+    
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('[PopupContainer] 🔥 未处理的Promise拒绝:', event.reason);
+    };
+    
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    // 添加一个立即可见的调试标记
+    if (typeof document !== 'undefined') {
+      const debugDiv = document.createElement('div');
+      debugDiv.style.cssText = 'position:fixed;top:0;left:0;background:purple;color:white;padding:5px;z-index:99999;';
+      debugDiv.textContent = `PopupContainer加载: ${new Date().toLocaleTimeString()}`;
+      document.body.appendChild(debugDiv);
+      setTimeout(() => {
+        if (document.body.contains(debugDiv)) {
+          document.body.removeChild(debugDiv);
+        }
+      }, 3000);
+    }
+    
+    console.debug('[PopupContainer] 组件已初始化');
+    console.warn('[PopupContainer] ⚠️ 组件已初始化 - WARN');
+    console.error('[PopupContainer] ❌ 组件已初始化 - ERROR（用于调试）');
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+  
   const [activeTab, setActiveTab] = useState<TabType>('cli');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
@@ -104,7 +143,13 @@ ${headers.join('\n')}`;
 
   // 处理URL获取
   const handleFetchUrl = async (pageName: string, _url: string, params: Record<string, string>) => {
-    console.log('[AIHC助手] 开始处理页面:', pageName, params);
+    console.log('[AIHC助手] 🔄 开始处理页面:', pageName, params);
+    console.log('[AIHC助手] 🔄 当前状态:', {
+      isDataDownloadPage: taskParams.isDataDownloadPage,
+      isDataDumpPage: taskParams.isDataDumpPage,
+      activeTab,
+      isLoading
+    });
     
     // 防止重复加载
     if (isLoading) {
@@ -121,12 +166,36 @@ ${headers.join('\n')}`;
       const pageData = await pageHandlerManager.handlePage(pageName, params);
       console.log('[AIHC助手] 页面处理器返回数据:', pageData);
       
-      // 更新任务参数
+      // 更新任务参数，完全替换旧状态
       setTaskParams(prev => ({
-        ...prev,
+        // 保留基础字段
+        type: prev.type,
+        dataSource: prev.dataSource,
+        priority: prev.priority,
+        customParams: prev.customParams,
+        generated: prev.generated,
+        name: prev.name,
+        // 设置默认值，然后用新页面数据覆盖
+        commandScript: '',
+        jsonItems: [],
+        yamlItems: [],
+        cliItems: [],
+        apiDocs: [],
+        chatConfig: undefined,
+        isDataDownloadPage: false,
+        isDataDumpPage: false,
+        datasetId: undefined,
+        category: undefined,
+        // 用新页面数据覆盖默认值
         ...pageData
       }));
-      console.log('[AIHC助手] 任务参数已更新');
+      console.log('[AIHC助手] ✅ 任务参数已更新:', {
+        oldIsDataDownloadPage: taskParams.isDataDownloadPage,
+        newIsDataDownloadPage: pageData.isDataDownloadPage,
+        oldIsDataDumpPage: taskParams.isDataDumpPage,
+        newIsDataDumpPage: pageData.isDataDumpPage,
+        pageName
+      });
       
       // 检查当前activeTab是否仍然有效，如果无效则设置默认tab
       // 使用useCallback包装setActiveTab以避免异步状态问题
@@ -295,6 +364,176 @@ ${headers.join('\n')}`;
     }
   }, [showMessage]);
 
+  // 处理数据转储提交 - 跳转到创建任务页面
+  const handleSubmitDataDump = useCallback(async (config: DataDumpConfig) => {
+    // 验证必要参数
+    const requiredFields = ['resourcePoolType', 'resourcePoolId', 'queueId', 'pfsId', 'storagePath'];
+    const missingFields = requiredFields.filter(field => !config[field as keyof DataDumpConfig]);
+    
+    if (missingFields.length > 0) {
+      const errorMsg = `缺少必要参数: ${missingFields.join(', ')}`;
+      showMessage('error', errorMsg);
+      return;
+    }
+    
+    try {
+      // 生成任务模板
+      const taskTemplate = generateDataDumpTaskTemplate(config);
+      
+      // 保存任务配置到localStorage，供后续使用
+      localStorage.setItem('aihc_data_dump_config', JSON.stringify(config));
+      localStorage.setItem('aihc_data_dump_template', JSON.stringify(taskTemplate));
+      
+      // 使用Chrome扩展API在当前页签打开创建任务页面
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0] && tabs[0].id) {
+            chrome.tabs.update(tabs[0].id, {
+              url: 'https://console.bce.baidu.com/aihc/task/create?from=dataDownload'
+            });
+          }
+        });
+      } else {
+        // 如果不在扩展环境中，使用window.location
+        window.location.href = 'https://console.bce.baidu.com/aihc/task/create?from=dataDownload';
+      }
+      
+      showMessage('success', '正在跳转到创建任务页面...');
+      
+    } catch (error) {
+      console.error('[AIHC助手] 跳转失败:', error);
+      showMessage('error', `跳转失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
+  }, [showMessage]);
+
+  // 生成数据转储任务模板
+  const generateDataDumpTaskTemplate = (config: DataDumpConfig): DataDumpTaskTemplate => {
+    const timestamp = Date.now();
+    const jobName = `data-dump-${config.resourcePoolId.substring(0, 8)}-${timestamp}`;
+    
+    console.log('[AIHC助手] 生成任务模板参数:', {
+      resourcePoolType: config.resourcePoolType,
+      resourcePoolId: config.resourcePoolId,
+      queueId: config.queueId,
+      pfsId: config.pfsId,
+      storagePath: config.storagePath,
+      jobName
+    });
+    
+    // 构建 PFS 数据源配置（使用用户配置的存储路径）
+    const pfsDataSource = {
+      sourcePath: config.storagePath, // 用户配置的存储路径（已去除bos:前缀）
+      mountPath: "/pfs/data",
+      name: config.pfsId,
+      pfsId: config.pfsId,
+      options: {},
+      type: "pfs"
+    };
+    
+    // 构建 BOS 数据源配置（使用原始存储路径去除bos:前缀）
+    let bosSourcePath = config.storagePath; // 默认使用用户配置路径
+    if (config.originalStoragePath) {
+      // 如果有原始路径，去除bos:前缀
+      bosSourcePath = config.originalStoragePath.startsWith('bos:/') 
+        ? config.originalStoragePath.substring(4) 
+        : config.originalStoragePath;
+    }
+    
+    const bosDataSource = {
+      type: "bos",
+      sourcePath: bosSourcePath, // 原始存储路径去除bos:前缀
+      mountPath: "/bos/data",
+      options: {}
+    };
+    
+    console.log('[AIHC助手] 数据源配置详情:', {
+      pfs: {
+        sourcePath: pfsDataSource.sourcePath,
+        description: '用户配置的存储路径'
+      },
+      bos: {
+        sourcePath: bosDataSource.sourcePath,
+        originalPath: config.originalStoragePath,
+        description: '原始存储路径去除bos:前缀'
+      }
+    });
+    
+    return {
+      tensorboard: {
+        enable: false,
+        logPath: "",
+        serviceType: "LoadBalancer"
+      },
+      autoCreatePVC: true,
+      priority: "normal",
+      isCustomDelete: false,
+      retentionPeriod: "",
+      retentionUnit: "d",
+      isPolicy: false,
+      cpromId: "",
+      selectedRowKeys: [],
+      pfsId: config.pfsId,
+      imageType: "ccr",
+      runningTimeoutStopTimeUnit: "0d",
+      visibleScope: 1,
+      resourcePoolType: config.resourcePoolType === '自运维' ? 'normal' : 'serverless',
+      jobFramework: "pytorch",
+      name: jobName,
+      command: `echo "数据转储任务开始执行..." && \
+echo "数据集存储路径: ${config.storagePath}" && \
+echo "PFS实例ID: ${config.pfsId}" && \
+echo "转储开始时间: $(date)" && \
+echo "开始数据转储操作..." && \
+sleep 300 && \
+echo "数据转储任务完成: $(date)"`,
+      enabledHangDetection: false,
+      unconditionalFaultToleranceLimit: 0,
+      enableReplace: false,
+      queue: config.queueId,
+      vpcId: "vpc-f0pp0jbzip3c", // 这个值应该从资源池配置中动态获取
+      datasource: [
+        {
+          type: "emptydir",
+          name: "devshm",
+          mountPath: "/dev/shm",
+          options: {
+            medium: "Memory",
+            sizeLimit: 10
+          }
+        },
+        pfsDataSource,
+        bosDataSource
+      ],
+      jobSpec: {
+        Master: {
+          image: "registry.baidubce.com/aihcp-public/pytorch",
+          tag: "22.08-py3",
+          replicas: 1,
+          env: {
+            AIHC_JOB_NAME: jobName,
+            NCCL_IB_DISABLE: "1",
+            DATA_DUMP_STORAGE_PATH: config.storagePath,
+            DATA_DUMP_RESOURCE_POOL: config.resourcePoolId,
+            DATA_DUMP_PFS_ID: config.pfsId,
+            DATA_DUMP_QUEUE_ID: config.queueId
+          },
+          resource: {},
+          restartPolicy: "Never"
+        }
+      },
+      faultTolerance: false,
+      jobDistributed: false,
+      labels: {
+        "aijob.cce.baidubce.com/create-from-aihcp": "true",
+        "data-dump-task": "true",
+        "resource-pool-id": config.resourcePoolId,
+        "pfs-id": config.pfsId,
+        "queue-id": config.queueId
+      },
+      annotations: null,
+      workloadType: "PytorchJob"
+    };
+  };
 
   // 防抖计时器
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -317,7 +556,7 @@ ${headers.join('\n')}`;
         if (currentTabInfo.isSupported) {
           await handleFetchUrl(currentTabInfo.pageName, currentTabInfo.url, currentTabInfo.params);
         } else {
-          // 清空不支持页面的数据
+          // 清空不支持页面的数据，包括特殊页面标志
           setTaskParams(prev => ({
             ...prev,
             cliItems: [],
@@ -325,7 +564,12 @@ ${headers.join('\n')}`;
             jsonItems: [],
             yamlItems: [],
             commandScript: '',
-            chatConfig: undefined
+            chatConfig: undefined,
+            // 清除特殊页面标志
+            isDataDownloadPage: false,
+            isDataDumpPage: false,
+            datasetId: undefined,
+            category: undefined
           }));
           setActiveTab('cli');
         }
@@ -341,6 +585,35 @@ ${headers.join('\n')}`;
     detectAndUpdatePage();
   }, [detectAndUpdatePage]);
 
+  // 监听来自background的消息（比如页面变化通知）
+  useEffect(() => {
+    const handleBackgroundMessage = (message: any, _sender: any, sendResponse: (response?: any) => void) => {
+      console.log('[AIHC助手] PopupContainer收到background消息:', message);
+      
+      // 处理页面变化通知
+      if (message.action === 'pageChanged') {
+        console.log('[AIHC助手] 收到页面变化通知，重新检测页面');
+        // 触发页面重新检测
+        detectAndUpdatePage();
+        sendResponse({ success: true });
+      }
+      
+      return true; // 保持消息通道开放
+    };
+    
+    // 添加消息监听器
+    if (chrome.runtime && chrome.runtime.onMessage) {
+      chrome.runtime.onMessage.addListener(handleBackgroundMessage);
+    }
+    
+    // 清理监听器
+    return () => {
+      if (chrome.runtime && chrome.runtime.onMessage) {
+        chrome.runtime.onMessage.removeListener(handleBackgroundMessage);
+      }
+    };
+  }, [detectAndUpdatePage]);
+  
   // 监听页面变化
   useEffect(() => {
     const handleTabUpdate = (_tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
@@ -385,7 +658,20 @@ ${headers.join('\n')}`;
 
   // 渲染内容
   const renderContent = () => {
+    console.log('[PopupContainer] 🟢 renderContent 被调用');
+    console.log('[PopupContainer] 当前页面状态:', {
+      isSupported: pageInfo.isSupported,
+      pageName: pageInfo.pageName,
+      url: pageInfo.url,
+      isLoading,
+      isDataDumpPage: taskParams.isDataDumpPage,
+      isDataDownloadPage: taskParams.isDataDownloadPage,
+      datasetId: taskParams.datasetId,
+      category: taskParams.category
+    });
+    
     if (!pageInfo.isSupported) {
+      console.log('[PopupContainer] 页面不支持，显示 UnsupportedPage');
       return (
         <UnsupportedPage 
           currentUrl={pageInfo.url}
@@ -394,9 +680,34 @@ ${headers.join('\n')}`;
     }
 
     if (isLoading) {
+      console.log('[PopupContainer] 正在加载，显示 LoadingIndicator');
       return <LoadingIndicator />;
     }
 
+    // 数据转储页面和数据下载页面不显示TAB导航
+    if (taskParams.isDataDumpPage || taskParams.isDataDownloadPage) {
+      console.log('[PopupContainer] 🟦 显示特殊页面（数据转储/下载）');
+      console.log('[PopupContainer] handleSubmitDataDump 函数情况:', {
+        exists: !!handleSubmitDataDump,
+        type: typeof handleSubmitDataDump,
+        name: handleSubmitDataDump?.name,
+        toString: handleSubmitDataDump?.toString().substring(0, 100)
+      });
+      
+      return (
+        <ContentArea
+          activeTab={activeTab}
+          taskParams={taskParams}
+          onCopyText={handleCopyText}
+          onSaveFile={handleSaveFile}
+          onOpenUrl={handleOpenUrl}
+          onLoadChatConfig={handleLoadChatConfig}
+          onSubmitDataDump={handleSubmitDataDump}
+        />
+      );
+    }
+
+    console.log('[PopupContainer] 显示常规页面内容');
     return (
       <>
         <TabNavigation
@@ -412,6 +723,7 @@ ${headers.join('\n')}`;
           onSaveFile={handleSaveFile}
           onOpenUrl={handleOpenUrl}
           onLoadChatConfig={handleLoadChatConfig}
+          onSubmitDataDump={handleSubmitDataDump}
         />
       </>
     );

@@ -22,13 +22,18 @@ export const urlPatterns = {
   'https://console.bce.baidu.com/aihc/modelManage/info?tab=detail&': '模型详情',
   'https://console.bce.baidu.com/aihc/modelManage/info?': '模型详情',
   'https://console.bce.baidu.com/aihc/developmentMachines': '开发机列表',
-  'https://console.bce.baidu.com/aihc/dataDownload/create': '数据下载',
+  'https://console.bce.baidu.com/aihc/dataDownload/create': '创建数据下载任务',
+  'https://console.bce.baidu.com/aihc/dataDownload/info?datasetId=': '数据下载任务详情',
+  'https://console.bce.baidu.com/aihc/task/create?from=dataDownload': '创建任务',
 };
 
 // 检测当前页面类型
 export const detectPageType = (url: string): PageInfo => {
+  console.log('[页面检测] 开始检测URL:', url);
+  
   // 首先检查是否在AIHC控制台域名下
   if (!isAIHCConsolePage(url)) {
+    console.log('[页面检测] 不是AIHC控制台页面');
     return {
       isSupported: false,
       pageName: '请在百舸AIHC控制台页面使用',
@@ -42,21 +47,31 @@ export const detectPageType = (url: string): PageInfo => {
 
   // 按模式长度降序排序，确保更具体的模式优先匹配
   const sortedPatterns = Object.entries(urlPatterns).sort((a, b) => b[0].length - a[0].length);
+  console.log('[页面检测] 开始匹配URL模式，总计', sortedPatterns.length, '个模式');
   
   for (const [pattern, name] of sortedPatterns) {
-    if (url.startsWith(pattern)) {
+    const isMatch = url.startsWith(pattern);
+    if (isMatch) {
+      console.log('[页面检测] 匹配成功:', pattern, '->', name);
       // 特殊处理任务列表页面
       if (name === '任务列表' && url.includes('?clusters=all')) {
+        console.log('[页面检测] 任务列表页面特殊处理：跳过clusters=all');
         matched = false;
         break;
       }
       matched = true;
       pageName = name;
       break;
+    } else {
+      // 只在调试模式下输出所有未匹配的模式
+      if (pattern.includes('dataDownload')) {
+        console.log('[页面检测] 数据下载相关模式未匹配:', pattern, '当前URL:', url);
+      }
     }
   }
 
   const { params } = parseUrl(url);
+  console.log('[页面检测] 最终结果:', { matched, pageName, params });
 
   return {
     isSupported: matched,

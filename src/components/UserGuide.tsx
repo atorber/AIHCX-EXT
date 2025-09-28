@@ -65,7 +65,7 @@ const UserGuide: React.FC = () => {
           <div className="header-content">
             <div className="header-icon">🎉</div>
             <h3>欢迎使用 AIHC助手</h3>
-            <p className="version-tag">v0.5.0</p>
+            <p className="version-tag">v0.6.0</p>
           </div>
           <button className="close-btn" onClick={closeGuide} title="关闭">
             <span>×</span>

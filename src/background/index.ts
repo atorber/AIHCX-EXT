@@ -254,7 +254,48 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
   
-  // 处理表单填充消息，转发给content script
+  // 处理页面变化通知
+  if (message.action === 'pageChanged') {
+    console.log('[AIHC助手] 收到页面变化通知:', message.url);
+    
+    try {
+      // 直接返回成功，不需要特别的处理
+      // 侧边栏应该依赖自身的URL监听机制来更新内容
+      console.log('[AIHC助手] 页面变化通知处理完成');
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('[AIHC助手] 处理页面变化通知失败:', error);
+      sendResponse({ success: false, error: error instanceof Error ? error.message : '未知错误' });
+    }
+    return true;
+  }
+  
+  // 处理通用表单填充消息（数据集和模型），转发给content script
+  if (message.type === 'FILL_FORM') {
+    console.log('[AIHC助手] Background收到通用表单填充请求:', message.data);
+    
+    // 获取当前活动标签页
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs && tabs.length > 0 && tabs[0].id) {
+        // 转发消息给content script
+        chrome.tabs.sendMessage(tabs[0].id, message, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('[AIHC助手] 转发通用表单填充消息失败:', chrome.runtime.lastError.message);
+            sendResponse({ success: false, error: chrome.runtime.lastError.message });
+          } else {
+            console.log('[AIHC助手] 通用表单填充消息转发成功:', response);
+            sendResponse(response);
+          }
+        });
+      } else {
+        console.error('[AIHC助手] 无法获取当前活动标签页');
+        sendResponse({ success: false, error: '无法获取当前活动标签页' });
+      }
+    });
+    return true; // 异步响应
+  }
+  
+  // 处理表单填充消息（兼容旧版本），转发给content script
   if (message.type === 'FILL_DATASET_FORM') {
     console.log('[AIHC助手] Background收到表单填充请求:', message.data);
     

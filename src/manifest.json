@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "AIHC助手",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "description": "AIHC浏览器辅助工具 - 生成CLI命令/JSON参数/YAML参数/API文档",
     
     "icons": {
@@ -40,7 +40,7 @@
       }
     ],
     
-    "permissions": ["storage", "activeTab", "tabs", "sidePanel", "notifications"],
+    "permissions": ["storage", "activeTab", "tabs", "sidePanel", "notifications", "scripting"],
     
     "web_accessible_resources": [
       {

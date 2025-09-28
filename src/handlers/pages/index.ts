@@ -14,3 +14,4 @@ export { ResourcePoolDetailHandler } from './ResourcePoolDetailHandler';
 export { QueueListHandler } from './QueueListHandler';
 export { TaskDetailHandler } from './TaskDetailHandler';
 export { TaskListHandler } from './TaskListHandler';
+export { CreateTaskHandler } from './CreateTaskHandler';
