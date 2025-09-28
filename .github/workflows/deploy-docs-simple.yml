@@ -1,0 +1,150 @@
+name: Deploy Docs to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ '.qoder/repowiki/zh/**' ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Build documentation
+        run: |
+          mkdir -p dist-docs
+          cp -r .qoder/repowiki/zh/* dist-docs/
+          
+          cat > dist-docs/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="zh-CN">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>AIHC助手扩展 - 文档</title>
+              <style>
+                  body { 
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
+                      max-width: 1200px; 
+                      margin: 0 auto; 
+                      padding: 20px; 
+                      line-height: 1.6; 
+                      color: #333;
+                  }
+                  .header { 
+                      border-bottom: 2px solid #007bff; 
+                      padding-bottom: 20px; 
+                      margin-bottom: 30px; 
+                  }
+                  .nav { 
+                      display: flex; 
+                      flex-wrap: wrap; 
+                      gap: 15px; 
+                      margin-bottom: 30px; 
+                  }
+                  .nav a { 
+                      color: #007bff; 
+                      text-decoration: none; 
+                      padding: 10px 15px; 
+                      border: 1px solid #007bff; 
+                      border-radius: 6px; 
+                      transition: all 0.2s ease;
+                  }
+                  .nav a:hover { 
+                      background: #007bff; 
+                      color: white; 
+                  }
+                  .content { 
+                      border: 1px solid #e1e5e9; 
+                      border-radius: 8px; 
+                      min-height: 500px; 
+                      background: #fff;
+                  }
+                  iframe { 
+                      width: 100%; 
+                      height: 700px; 
+                      border: none; 
+                      border-radius: 8px;
+                  }
+                  .footer { 
+                      margin-top: 30px; 
+                      text-align: center; 
+                      color: #666; 
+                      padding-top: 20px;
+                      border-top: 1px solid #eee;
+                  }
+                  .footer a {
+                      color: #007bff;
+                      text-decoration: none;
+                  }
+                  .footer a:hover {
+                      text-decoration: underline;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="header">
+                  <h1>🚀 AIHC助手浏览器扩展</h1>
+                  <p>为百舸AIHC控制台提供便捷的CLI命令生成、API文档和智能助手功能</p>
+              </div>
+              
+              <div class="nav">
+                  <a href="#" onclick="loadDoc('content/快速入门.md')">📚 快速入门</a>
+                  <a href="#" onclick="loadDoc('content/安装指南.md')">🔧 安装指南</a>
+                  <a href="#" onclick="loadDoc('content/功能说明.md')">⚡ 功能说明</a>
+                  <a href="#" onclick="loadDoc('content/开发指南.md')">👨‍💻 开发指南</a>
+                  <a href="#" onclick="loadDoc('content/故障排除.md')">🔍 故障排除</a>
+                  <a href="#" onclick="loadDoc('content/更新日志.md')">📝 更新日志</a>
+              </div>
+              
+              <div class="content">
+                  <iframe id="content-frame" src="content/快速入门.md"></iframe>
+              </div>
+              
+              <div class="footer">
+                  <p>
+                      <a href="https://github.com/luyuchao/AIHCX-EXT" target="_blank">📦 GitHub 仓库</a> | 
+                      <a href="https://console.bce.baidu.com/aihc" target="_blank">🌐 百舸AIHC控制台</a>
+                  </p>
+                  <p><small>自动构建时间: $(date)</small></p>
+              </div>
+              
+              <script>
+                  function loadDoc(file) {
+                      document.getElementById('content-frame').src = file;
+                  }
+                  
+                  // 默认加载快速入门
+                  window.addEventListener('load', function() {
+                      loadDoc('content/快速入门.md');
+                  });
+              </script>
+          </body>
+          </html>
+          EOF
+          
+          touch dist-docs/.nojekyll
+          
+          echo "📁 Documentation structure:"
+          find dist-docs -type f -name "*.md" | head -10
+          echo "✅ Documentation build complete!"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist-docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
