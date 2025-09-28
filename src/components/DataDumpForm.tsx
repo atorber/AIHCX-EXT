@@ -602,7 +602,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       console.error('🔍 异常详情:', {
         error: errorMessage,
         stack: err instanceof Error ? err.stack : undefined,
-        config: taskConfig,
+        config: config,
         timestamp: new Date().toISOString()
       });
       setError('操作失败');
