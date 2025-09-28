@@ -21,123 +21,321 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm install -g marked highlight.js
+
       - name: Build documentation
         run: |
           mkdir -p dist-docs
-          cp -r .qoder/repowiki/zh/* dist-docs/
+          mkdir -p dist-docs/content
           
-          cat > dist-docs/index.html << 'EOF'
+          # 复制所有文档文件
+          cp -r .qoder/repowiki/zh/content/* dist-docs/content/
+          
+          # 创建文档索引
+          echo "# 生成文档导航索引"
+          cat > build-nav.js << 'NAVEOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          function scanDirectory(dir, basePath = '') {
+            const items = [];
+            const entries = fs.readdirSync(dir, { withFileTypes: true });
+            
+            entries.forEach(entry => {
+              if (entry.isDirectory()) {
+                const subItems = scanDirectory(path.join(dir, entry.name), path.join(basePath, entry.name));
+                if (subItems.length > 0) {
+                  items.push({
+                    type: 'folder',
+                    name: entry.name,
+                    children: subItems
+                  });
+                }
+              } else if (entry.name.endsWith('.md')) {
+                const filePath = path.join(dir, entry.name);
+                let title = entry.name.replace('.md', '');
+                
+                // 尝试从文件内容提取标题
+                try {
+                  const content = fs.readFileSync(filePath, 'utf8');
+                  const titleMatch = content.match(/^#\s+(.+)$/m);
+                  if (titleMatch) {
+                    title = titleMatch[1].trim();
+                  }
+                } catch (e) {
+                  console.log('无法读取文件:', filePath);
+                }
+                
+                items.push({
+                  type: 'file',
+                  name: entry.name,
+                  title: title,
+                  path: path.join(basePath, entry.name).replace(/\\/g, '/')
+                });
+              }
+            });
+            
+            return items;
+          }
+          
+          const docs = scanDirectory('dist-docs/content');
+          fs.writeFileSync('dist-docs/docs-nav.json', JSON.stringify(docs, null, 2));
+          console.log('文档导航生成完成');
+          NAVEOF
+          
+          node build-nav.js
+          
+          # 生成主页HTML
+          cat > dist-docs/index.html << 'HTMLEOF'
           <!DOCTYPE html>
           <html lang="zh-CN">
           <head>
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>AIHC助手扩展 - 文档</title>
+              <title>AIHC助手扩展 - 文档中心</title>
+              <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+              <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+              <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
               <style>
+                  * { box-sizing: border-box; }
                   body { 
                       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
-                      max-width: 1200px; 
-                      margin: 0 auto; 
-                      padding: 20px; 
-                      line-height: 1.6; 
-                      color: #333;
+                      margin: 0; padding: 0; line-height: 1.6; color: #24292f; background: #f6f8fa;
                   }
-                  .header { 
-                      border-bottom: 2px solid #007bff; 
-                      padding-bottom: 20px; 
-                      margin-bottom: 30px; 
+                  .container { display: flex; height: 100vh; }
+                  .sidebar { 
+                      width: 300px; background: #fff; border-right: 1px solid #d1d9e0; 
+                      overflow-y: auto; flex-shrink: 0;
                   }
-                  .nav { 
-                      display: flex; 
-                      flex-wrap: wrap; 
-                      gap: 15px; 
-                      margin-bottom: 30px; 
+                  .sidebar-header {
+                      padding: 20px; border-bottom: 1px solid #d1d9e0; background: #0969da; color: white;
                   }
-                  .nav a { 
-                      color: #007bff; 
-                      text-decoration: none; 
-                      padding: 10px 15px; 
-                      border: 1px solid #007bff; 
-                      border-radius: 6px; 
-                      transition: all 0.2s ease;
+                  .sidebar-header h1 { margin: 0; font-size: 1.2em; }
+                  .sidebar-content { padding: 10px 0; }
+                  .nav-item { 
+                      display: block; padding: 8px 20px; color: #24292f; text-decoration: none;
+                      border-left: 3px solid transparent; transition: all 0.2s;
                   }
-                  .nav a:hover { 
-                      background: #007bff; 
-                      color: white; 
+                  .nav-item:hover { background: #f6f8fa; border-left-color: #0969da; }
+                  .nav-item.active { background: #e7f3ff; border-left-color: #0969da; font-weight: 600; }
+                  .nav-folder { 
+                      padding: 8px 20px; font-weight: 600; color: #656d76; 
+                      cursor: pointer; user-select: none;
                   }
-                  .content { 
-                      border: 1px solid #e1e5e9; 
-                      border-radius: 8px; 
-                      min-height: 500px; 
-                      background: #fff;
+                  .nav-folder:hover { background: #f6f8fa; }
+                  .nav-folder.collapsed + .nav-children { display: none; }
+                  .nav-children { margin-left: 20px; }
+                  .main-content { 
+                      flex: 1; display: flex; flex-direction: column; overflow: hidden;
                   }
-                  iframe { 
-                      width: 100%; 
-                      height: 700px; 
-                      border: none; 
-                      border-radius: 8px;
+                  .content-header {
+                      background: #fff; padding: 15px 30px; border-bottom: 1px solid #d1d9e0;
+                      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                   }
-                  .footer { 
-                      margin-top: 30px; 
-                      text-align: center; 
-                      color: #666; 
-                      padding-top: 20px;
-                      border-top: 1px solid #eee;
+                  .content-area { 
+                      flex: 1; padding: 30px; overflow-y: auto; background: #fff;
+                      margin: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                   }
-                  .footer a {
-                      color: #007bff;
-                      text-decoration: none;
+                  .content-area h1 { margin-top: 0; color: #24292f; }
+                  .content-area h2 { margin-top: 30px; padding-bottom: 10px; border-bottom: 1px solid #d1d9e0; }
+                  .content-area pre { 
+                      background: #f6f8fa; padding: 16px; border-radius: 6px; 
+                      overflow-x: auto; border: 1px solid #d1d9e0;
                   }
-                  .footer a:hover {
-                      text-decoration: underline;
+                  .content-area code { 
+                      background: #f6f8fa; padding: 2px 6px; border-radius: 3px; 
+                      font-family: 'SFMono-Regular', Consolas, monospace;
+                  }
+                  .content-area pre code { background: none; padding: 0; }
+                  .content-area blockquote {
+                      border-left: 4px solid #0969da; padding-left: 16px; 
+                      margin-left: 0; color: #656d76;
+                  }
+                  .content-area table {
+                      border-collapse: collapse; width: 100%; margin: 20px 0;
+                  }
+                  .content-area th, .content-area td {
+                      border: 1px solid #d1d9e0; padding: 8px 12px; text-align: left;
+                  }
+                  .content-area th { background: #f6f8fa; font-weight: 600; }
+                  .welcome-content {
+                      text-align: center; padding: 60px 40px;
+                  }
+                  .welcome-content h1 { font-size: 2.5em; margin-bottom: 20px; color: #0969da; }
+                  .welcome-content p { font-size: 1.2em; color: #656d76; margin-bottom: 30px; }
+                  .feature-grid {
+                      display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                      gap: 20px; margin-top: 40px;
+                  }
+                  .feature-card {
+                      background: #f6f8fa; padding: 20px; border-radius: 8px;
+                      border: 1px solid #d1d9e0; text-align: left;
+                  }
+                  .feature-card h3 { margin-top: 0; color: #0969da; }
+                  @media (max-width: 768px) {
+                      .container { flex-direction: column; }
+                      .sidebar { width: 100%; height: auto; }
+                      .main-content { height: calc(100vh - 200px); }
                   }
               </style>
           </head>
           <body>
-              <div class="header">
-                  <h1>🚀 AIHC助手浏览器扩展</h1>
-                  <p>为百舸AIHC控制台提供便捷的CLI命令生成、API文档和智能助手功能</p>
-              </div>
-              
-              <div class="nav">
-                  <a href="#" onclick="loadDoc('content/快速入门.md')">📚 快速入门</a>
-                  <a href="#" onclick="loadDoc('content/安装指南.md')">🔧 安装指南</a>
-                  <a href="#" onclick="loadDoc('content/功能说明.md')">⚡ 功能说明</a>
-                  <a href="#" onclick="loadDoc('content/开发指南.md')">👨‍💻 开发指南</a>
-                  <a href="#" onclick="loadDoc('content/故障排除.md')">🔍 故障排除</a>
-                  <a href="#" onclick="loadDoc('content/更新日志.md')">📝 更新日志</a>
-              </div>
-              
-              <div class="content">
-                  <iframe id="content-frame" src="content/快速入门.md"></iframe>
-              </div>
-              
-              <div class="footer">
-                  <p>
-                      <a href="https://github.com/luyuchao/AIHCX-EXT" target="_blank">📦 GitHub 仓库</a> | 
-                      <a href="https://console.bce.baidu.com/aihc" target="_blank">🌐 百舸AIHC控制台</a>
-                  </p>
-                  <p><small>自动构建时间: $(date)</small></p>
+              <div class="container">
+                  <div class="sidebar">
+                      <div class="sidebar-header">
+                          <h1>📚 AIHC助手文档</h1>
+                      </div>
+                      <div class="sidebar-content" id="nav-container">
+                          <!-- 导航将通过JavaScript生成 -->
+                      </div>
+                  </div>
+                  
+                  <div class="main-content">
+                      <div class="content-header">
+                          <h2 id="page-title">AIHC助手浏览器扩展</h2>
+                      </div>
+                      
+                      <div class="content-area" id="content">
+                          <div class="welcome-content">
+                              <h1>🚀 欢迎使用 AIHC助手</h1>
+                              <p>为百舸AIHC控制台提供便捷的CLI命令生成、API文档和智能助手功能</p>
+                              
+                              <div class="feature-grid">
+                                  <div class="feature-card">
+                                      <h3>🎯 智能识别</h3>
+                                      <p>自动识别当前页面并提供相应的功能支持</p>
+                                  </div>
+                                  <div class="feature-card">
+                                      <h3>⚡ 快速操作</h3>
+                                      <p>一键生成CLI命令，提高工作效率</p>
+                                  </div>
+                                  <div class="feature-card">
+                                      <h3>📖 完整文档</h3>
+                                      <p>详细的API参考和使用指南</p>
+                                  </div>
+                                  <div class="feature-card">
+                                      <h3>🔧 易于扩展</h3>
+                                      <p>模块化架构，便于功能扩展</p>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
               </div>
               
               <script>
-                  function loadDoc(file) {
-                      document.getElementById('content-frame').src = file;
+                  let docsNav = [];
+                  let currentFile = null;
+                  
+                  // 加载导航数据
+                  fetch('docs-nav.json')
+                      .then(response => response.json())
+                      .then(data => {
+                          docsNav = data;
+                          renderNavigation();
+                      })
+                      .catch(error => console.error('加载导航失败:', error));
+                  
+                  function renderNavigation() {
+                      const container = document.getElementById('nav-container');
+                      container.innerHTML = renderNavItems(docsNav);
+                      
+                      // 绑定文件夹切换事件
+                      container.querySelectorAll('.nav-folder').forEach(folder => {
+                          folder.addEventListener('click', function() {
+                              this.classList.toggle('collapsed');
+                          });
+                      });
                   }
                   
-                  // 默认加载快速入门
-                  window.addEventListener('load', function() {
-                      loadDoc('content/快速入门.md');
-                  });
+                  function renderNavItems(items, level = 0) {
+                      return items.map(item => {
+                          if (item.type === 'folder') {
+                              return `
+                                  <div class="nav-folder">
+                                      📁 ${item.name}
+                                  </div>
+                                  <div class="nav-children">
+                                      ${renderNavItems(item.children, level + 1)}
+                                  </div>
+                              `;
+                          } else {
+                              return `
+                                  <a href="#" class="nav-item" onclick="loadDoc('${item.path}', '${item.title}')">
+                                      📄 ${item.title}
+                                  </a>
+                              `;
+                          }
+                      }).join('');
+                  }
+                  
+                  function loadDoc(filePath, title) {
+                      currentFile = filePath;
+                      document.getElementById('page-title').textContent = title;
+                      
+                      // 更新活动状态
+                      document.querySelectorAll('.nav-item').forEach(item => {
+                          item.classList.remove('active');
+                      });
+                      event.target.classList.add('active');
+                      
+                      // 加载Markdown文件
+                      fetch(`content/${filePath}`)
+                          .then(response => response.text())
+                          .then(markdown => {
+                              const html = marked.parse(markdown);
+                              document.getElementById('content').innerHTML = html;
+                              
+                              // 高亮代码
+                              document.querySelectorAll('pre code').forEach(block => {
+                                  hljs.highlightBlock(block);
+                              });
+                          })
+                          .catch(error => {
+                              console.error('加载文档失败:', error);
+                              document.getElementById('content').innerHTML = 
+                                  '<div style="text-align:center;padding:50px;"><h2>❌ 文档加载失败</h2><p>请检查文件路径或网络连接</p></div>';
+                          });
+                  }
+                  
+                  // 默认加载第一个文档
+                  setTimeout(() => {
+                      const firstDoc = findFirstDoc(docsNav);
+                      if (firstDoc) {
+                          loadDoc(firstDoc.path, firstDoc.title);
+                      }
+                  }, 100);
+                  
+                  function findFirstDoc(items) {
+                      for (const item of items) {
+                          if (item.type === 'file') {
+                              return item;
+                          } else if (item.children) {
+                              const found = findFirstDoc(item.children);
+                              if (found) return found;
+                          }
+                      }
+                      return null;
+                  }
               </script>
           </body>
           </html>
-          EOF
+          HTMLEOF
           
+          # 创建.nojekyll文件
           touch dist-docs/.nojekyll
           
           echo "📁 Documentation structure:"
           find dist-docs -type f -name "*.md" | head -10
+          echo "📄 Generated navigation:"
+          cat dist-docs/docs-nav.json | head -20
           echo "✅ Documentation build complete!"
 
       - name: Upload Pages artifact
