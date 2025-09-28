@@ -37,6 +37,7 @@ jobs:
           
           # 复制所有文档文件
           cp -r .qoder/repowiki/zh/content/* dist-docs/content/
+          cp -r .qoder/repowiki/zh/meta dist-docs/
           
           # 创建文档导航索引
           echo "# 生成文档导航索引"
@@ -44,17 +45,47 @@ jobs:
           const fs = require('fs');
           const path = require('path');
           
+          // 加载元数据
+          let metadata = null;
+          try {
+            const metadataPath = 'dist-docs/meta/repowiki-metadata.json';
+            if (fs.existsSync(metadataPath)) {
+              metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+              console.log('✅ 成功加载元数据，包含', metadata.wiki_catalogs?.length || 0, '个目录项');
+            }
+          } catch (e) {
+            console.log('⚠️ 无法加载元数据，使用默认排序');
+          }
+          
+          // 创建文档目录映射
+          const catalogMap = new Map();
+          if (metadata && metadata.wiki_catalogs) {
+            metadata.wiki_catalogs.forEach(catalog => {
+              catalogMap.set(catalog.name, {
+                order: catalog.order || 999,
+                description: catalog.description || '',
+                name: catalog.name
+              });
+            });
+          }
+          
           function scanDirectory(dir, basePath = '') {
             const items = [];
             const entries = fs.readdirSync(dir, { withFileTypes: true });
             
             entries.forEach(entry => {
               if (entry.isDirectory()) {
+                // 跳过 meta 目录
+                if (entry.name === 'meta') return;
+                
                 const subItems = scanDirectory(path.join(dir, entry.name), path.join(basePath, entry.name));
                 if (subItems.length > 0) {
+                  const catalogInfo = catalogMap.get(entry.name);
                   items.push({
                     type: 'folder',
                     name: entry.name,
+                    order: catalogInfo?.order || 999,
+                    description: catalogInfo?.description || '',
                     children: subItems
                   });
                 }
@@ -73,21 +104,66 @@ jobs:
                   console.log('无法读取文件:', filePath);
                 }
                 
+                const catalogInfo = catalogMap.get(title) || catalogMap.get(entry.name.replace('.md', ''));
                 items.push({
                   type: 'file',
                   name: entry.name,
                   title: title,
-                  path: path.join(basePath, entry.name).replace(/\\/g, '/')
+                  path: path.join(basePath, entry.name).replace(/\\/g, '/'),
+                  order: catalogInfo?.order || 999,
+                  description: catalogInfo?.description || ''
                 });
               }
+            });
+            
+            // 按order排序，order相同时按名称排序
+            items.sort((a, b) => {
+              if (a.order !== b.order) {
+                return a.order - b.order;
+              }
+              return a.name.localeCompare(b.name, 'zh-CN');
             });
             
             return items;
           }
           
           const docs = scanDirectory('dist-docs/content');
-          fs.writeFileSync('dist-docs/docs-nav.json', JSON.stringify(docs, null, 2));
-          console.log('文档导航生成完成');
+          
+          // 生成导航数据
+          const navData = {
+            docs: docs,
+            metadata: {
+              totalDocs: metadata?.wiki_catalogs?.length || 0,
+              generatedAt: new Date().toISOString(),
+              hasMetadata: !!metadata
+            }
+          };
+          
+          fs.writeFileSync('dist-docs/docs-nav.json', JSON.stringify(navData, null, 2));
+          console.log('📚 文档导航生成完成，共处理', docs.length, '个项目');
+          
+          // 打印导航结构预览
+          function printStructure(items, indent = '') {
+            items.slice(0, 10).forEach(item => { // 只显示前10项
+              if (item.type === 'folder') {
+                console.log(`${indent}📁 ${item.name} (${item.order})`);
+                if (item.children.length > 0) {
+                  printStructure(item.children.slice(0, 3), indent + '  ');
+                  if (item.children.length > 3) {
+                    console.log(`${indent}  ... 还有 ${item.children.length - 3} 项`);
+                  }
+                }
+              } else {
+                console.log(`${indent}📄 ${item.title} (${item.order})`);
+              }
+            });
+            if (items.length > 10) {
+              console.log(`${indent}... 还有 ${items.length - 10} 项`);
+            }
+          }
+          
+          console.log('\n📋 导航结构预览:');
+          printStructure(docs);
           NAVEOF
           
           node build-nav.cjs
@@ -132,6 +208,10 @@ jobs:
                   .nav-folder:hover { background: #f6f8fa; }
                   .nav-folder.collapsed + .nav-children { display: none; }
                   .nav-children { margin-left: 20px; }
+                  .order-badge {
+                      background: #0969da; color: white; font-size: 10px; padding: 2px 6px;
+                      border-radius: 10px; margin-left: 8px; font-weight: normal;
+                  }
                   .main-content { 
                       flex: 1; display: flex; flex-direction: column; overflow: hidden;
                   }
@@ -231,7 +311,7 @@ jobs:
               </div>
               
               <script>
-                  let docsNav = [];
+                  let docsNav = {};
                   let currentFile = null;
                   
                   // 加载导航数据
@@ -239,13 +319,21 @@ jobs:
                       .then(response => response.json())
                       .then(data => {
                           docsNav = data;
+                          console.log('📁 加载文档导航:', data.metadata);
                           renderNavigation();
+                          
+                          // 显示元数据信息
+                          if (data.metadata?.hasMetadata) {
+                              console.log('✅ 使用元数据排序，共', data.metadata.totalDocs, '个文档');
+                          } else {
+                              console.log('⚠️ 使用默认排序');
+                          }
                       })
                       .catch(error => console.error('加载导航失败:', error));
                   
                   function renderNavigation() {
                       const container = document.getElementById('nav-container');
-                      container.innerHTML = renderNavItems(docsNav);
+                      container.innerHTML = renderNavItems(docsNav.docs || []);
                       
                       // 绑定文件夹切换事件
                       container.querySelectorAll('.nav-folder').forEach(folder => {
@@ -258,18 +346,20 @@ jobs:
                   function renderNavItems(items, level = 0) {
                       return items.map(item => {
                           if (item.type === 'folder') {
+                              const orderBadge = item.order !== 999 ? ` <span class="order-badge">${item.order}</span>` : '';
                               return `
-                                  <div class="nav-folder">
-                                      📁 ${item.name}
+                                  <div class="nav-folder" title="顺序: ${item.order}">
+                                      📁 ${item.name}${orderBadge}
                                   </div>
                                   <div class="nav-children">
                                       ${renderNavItems(item.children, level + 1)}
                                   </div>
                               `;
                           } else {
+                              const orderBadge = item.order !== 999 ? ` <span class="order-badge">${item.order}</span>` : '';
                               return `
-                                  <a href="#" class="nav-item" onclick="loadDoc('${item.path}', '${item.title}')">
-                                      📄 ${item.title}
+                                  <a href="#" class="nav-item" onclick="loadDoc('${item.path}', '${item.title}')" title="顺序: ${item.order}">
+                                      📄 ${item.title}${orderBadge}
                                   </a>
                               `;
                           }
@@ -307,7 +397,7 @@ jobs:
                   
                   // 默认加载第一个文档
                   setTimeout(() => {
-                      const firstDoc = findFirstDoc(docsNav);
+                      const firstDoc = findFirstDoc(docsNav.docs || []);
                       if (firstDoc) {
                           loadDoc(firstDoc.path, firstDoc.title);
                       }
