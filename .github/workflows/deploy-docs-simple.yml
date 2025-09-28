@@ -142,6 +142,20 @@ jobs:
           fs.writeFileSync('dist-docs/docs-nav.json', JSON.stringify(navData, null, 2));
           console.log('📚 文档导航生成完成，共处理', docs.length, '个项目');
           
+          // 调试导航数据结构
+          console.log('📊 导航数据结构验证:');
+          console.log('  - docs 类型:', Array.isArray(navData.docs) ? 'Array' : typeof navData.docs);
+          console.log('  - docs 长度:', navData.docs ? navData.docs.length : 0);
+          console.log('  - metadata 存在:', !!navData.metadata);
+          console.log('  - hasMetadata:', navData.metadata?.hasMetadata);
+          
+          // 打印部分导航数据用于调试
+          const debugData = {
+            docs: navData.docs.slice(0, 2), // 只显示前2项
+            metadata: navData.metadata
+          };
+          console.log('📋 导航数据样例:', JSON.stringify(debugData, null, 2));
+          
           // 打印导航结构预览
           function printStructure(items, indent = '') {
             items.slice(0, 10).forEach(item => { // 只显示前10项
@@ -324,9 +338,29 @@ jobs:
                           return response.json();
                       })
                       .then(data => {
-                          console.log('📊 加载的数据:', data);
+                          console.log('📊 加载的原始数据类型:', typeof data);
+                          console.log('📊 数据键值:', Object.keys(data || {}));
+                          
+                          // 验证数据结构
+                          if (!data) {
+                              throw new Error('导航数据为空');
+                          }
+                          
+                          if (!data.docs) {
+                              console.error('❌ 数据结构错误: 缺少 docs 字段');
+                              console.log('实际数据:', data);
+                              throw new Error('数据结构错误: 缺少 docs 字段');
+                          }
+                          
+                          if (!Array.isArray(data.docs)) {
+                              console.error('❌ docs 不是数组:', typeof data.docs);
+                              throw new Error('docs 字段不是数组');
+                          }
+                          
                           docsNav = data;
-                          console.log('📁 加载文档导航:', data.metadata);
+                          console.log('✅ 数据验证成功 - docs数量:', data.docs.length);
+                          console.log('📁 元数据信息:', data.metadata);
+                          
                           renderNavigation();
                           
                           // 显示元数据信息
@@ -340,14 +374,28 @@ jobs:
                           console.error('❌ 加载导航失败:', error);
                           console.error('Error details:', error.message);
                           
+                          // 设置默认数据结构
+                          docsNav = {
+                              docs: [],
+                              metadata: {
+                                  hasMetadata: false,
+                                  totalDocs: 0,
+                                  error: error.message
+                              }
+                          };
+                          
                           // 显示错误信息
                           const container = document.getElementById('nav-container');
                           if (container) {
                               container.innerHTML = `
                                   <div style="padding: 20px; color: #d73a49; background: #ffeef0; margin: 10px; border-radius: 6px;">
                                       <h4>⚠️ 导航加载失败</h4>
-                                      <p>${error.message}</p>
-                                      <small>请检查控制台获取更多信息</small>
+                                      <p><strong>错误:</strong> ${error.message}</p>
+                                      <details style="margin-top: 10px;">
+                                          <summary>点击查看详细信息</summary>
+                                          <pre style="background: #f6f8fa; padding: 10px; margin-top: 10px; border-radius: 4px; font-size: 12px;">${error.stack || '无详细信息'}</pre>
+                                      </details>
+                                      <p style="margin-top: 10px;"><small>请检查控制台获取更多信息</small></p>
                                   </div>
                               `;
                           }
@@ -446,8 +494,18 @@ jobs:
           
           echo "📁 Documentation structure:"
           find dist-docs -type f -name "*.md" | head -10
-          echo "📄 Generated navigation:"
-          cat dist-docs/docs-nav.json | head -20
+          echo "💾 检查生成的导航文件:"
+          if [ -f "dist-docs/docs-nav.json" ]; then
+            echo "✅ docs-nav.json 文件存在"
+            echo "📋 文件大小: $(wc -c < dist-docs/docs-nav.json) 字符"
+            echo "📄 文件内容预览:"
+            head -20 dist-docs/docs-nav.json
+            echo "..."
+          else
+            echo "❌ docs-nav.json 文件不存在!"
+            echo "📂 dist-docs 目录内容:"
+            ls -la dist-docs/
+          fi
           echo "✅ Documentation build complete!"
 
       - name: Upload Pages artifact
