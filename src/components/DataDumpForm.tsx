@@ -580,16 +580,32 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       setShowTaskResult(true);
 
       if (result.success) {
-        console.log('任务创建成功:', result.result);
-        // 可以在这里添加成功提示
+        console.log('✅ 任务创建成功:', result.result);
+        console.log('📋 任务详情:', {
+          jobId: result.result?.jobId,
+          jobName: result.result?.jobName,
+          k8sName: result.result?.k8sName
+        });
       } else {
-        setError(result.error || '任务创建失败');
+        console.error('❌ 任务创建失败:', result.error);
+        console.error('🔍 详细错误信息:', {
+          error: result.error,
+          config: taskConfig,
+          timestamp: new Date().toISOString()
+        });
+        setError('任务创建失败');
       }
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '提交失败，请重试';
-      setError(errorMessage);
-      console.error('提交数据转储任务失败:', err);
+      console.error('❌ 提交数据转储任务异常:', err);
+      console.error('🔍 异常详情:', {
+        error: errorMessage,
+        stack: err instanceof Error ? err.stack : undefined,
+        config: taskConfig,
+        timestamp: new Date().toISOString()
+      });
+      setError('操作失败');
     } finally {
       setIsSubmitting(false);
     }
@@ -617,59 +633,70 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         )}
       </div>
 
+      {/* 简洁的错误提示 */}
       {error && (
-        <div className="error-message">
-          <span className="error-icon">⚠️</span>
-          {error}
+        <div className="error-toast">
+          <div className="error-toast-content">
+            <span className="error-toast-icon">⚠️</span>
+            <span className="error-toast-message">操作失败，请查看控制台</span>
+            <button 
+              className="error-toast-close"
+              onClick={() => setError('')}
+              title="关闭"
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
 
-      {/* 任务结果显示 */}
+      {/* 简洁的任务结果提示 */}
       {showTaskResult && taskResult && (
-        <div className={`task-result ${taskResult.success ? 'success' : 'error'}`}>
-          <div className="task-result-header">
-            <h4>{taskResult.success ? '✅ 任务创建成功' : '❌ 任务创建失败'}</h4>
-          </div>
-          {taskResult.success && taskResult.result && (
-            <div className="task-result-details">
-              <div className="task-result-item">
-                <span className="task-result-label">任务ID:</span>
-                <span className="task-result-value">{taskResult.result.jobId}</span>
-              </div>
-              <div className="task-result-item">
-                <span className="task-result-label">任务名称:</span>
-                <span className="task-result-value">{taskResult.result.jobName}</span>
-              </div>
-              <div className="task-result-item">
-                <span className="task-result-label">K8s名称:</span>
-                <span className="task-result-value">{taskResult.result.k8sName}</span>
-              </div>
-            </div>
-          )}
-          {!taskResult.success && (
-            <div className="task-result-error">
-              <p>{taskResult.error}</p>
-            </div>
-          )}
-          <div className="task-result-actions">
-            <button 
-              type="button" 
-              className="btn btn-secondary"
-              onClick={() => setShowTaskResult(false)}
-            >
-              关闭
-            </button>
-            {taskResult.success && (
+        <div className={`result-toast ${taskResult.success ? 'success' : 'error'}`}>
+          <div className="result-toast-content">
+            <div className="result-toast-header">
+              <span className="result-toast-icon">
+                {taskResult.success ? '✅' : '❌'}
+              </span>
+              <span className="result-toast-title">
+                {taskResult.success ? '任务创建成功' : '任务创建失败'}
+              </span>
               <button 
-                type="button" 
-                className="btn btn-primary"
-                onClick={() => {
-                  // 可以添加跳转到任务详情页面的逻辑
-                  console.log('跳转到任务详情页面:', taskResult.result?.jobId);
-                }}
+                className="result-toast-close"
+                onClick={() => setShowTaskResult(false)}
+                title="关闭"
               >
-                查看任务详情
+                ×
               </button>
+            </div>
+            
+            {taskResult.success && taskResult.result && (
+              <div className="result-toast-details">
+                <div className="result-toast-item">
+                  <span className="result-toast-label">任务ID:</span>
+                  <span className="result-toast-value">{taskResult.result.jobId}</span>
+                </div>
+              </div>
+            )}
+            
+            {!taskResult.success && (
+              <div className="result-toast-error">
+                请查看控制台获取详细错误信息
+              </div>
+            )}
+            
+            {taskResult.success && (
+              <div className="result-toast-actions">
+                <button 
+                  type="button" 
+                  className="result-toast-btn"
+                  onClick={() => {
+                    console.log('跳转到任务详情页面:', taskResult.result?.jobId);
+                  }}
+                >
+                  查看任务详情
+                </button>
+              </div>
             )}
           </div>
         </div>
