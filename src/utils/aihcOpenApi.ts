@@ -17,12 +17,10 @@ const getSignature = (ak: string, sk: string, method: string, path: string, quer
   return signature;
 };
 
-const callBecOpenApi = async (ak: string, sk: string, host: string, path: string, method: string, query: any = {}, body: any = {}) => {
+const callBecOpenApi = async (ak: string, sk: string, host: string, path: string, method: string, query: any = {}, body: any = {}, headers:Record<string, any>={}) => {
 
   const uri = `https://${host}${path}`;
-  let headers: Record<string, any> = {
-    Host: host,
-  };
+  headers.Host = host;
 
   const signature = getSignature(ak, sk, method, path, query, headers);
   
