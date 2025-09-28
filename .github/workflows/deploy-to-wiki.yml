@@ -1,0 +1,114 @@
+name: Deploy Documentation to GitHub Wiki
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - '.qoder/repowiki/zh/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Checkout wiki
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ github.repository }}.wiki
+        path: wiki
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup wiki if empty
+      run: |
+        cd wiki
+        if [ ! -f "Home.md" ]; then
+          cat > Home.md << 'HOMEEOF'
+        # Welcome to the AIHCX-EXT wiki!
+        
+        Wikis provide a place in your repository to lay out the roadmap of your project, show the current status, and document software better, together.
+        
+        ## 文档导航
+        
+        HOMEEOF
+          
+          # 扫描文档文件并生成导航链接
+          find ../.qoder/repowiki/zh -name "*.md" | while read file; do
+            filename=$(basename "$file" .md)
+            title=$(head -n 1 "$file" | sed 's/^# //' || echo "$filename")
+            echo "- [$title]($filename)" >> Home.md
+          done
+          
+          cat >> Home.md << 'FOOTEREOF'
+        
+        ---
+        
+        *此文档由 GitHub Actions 自动生成和更新*
+        FOOTEREOF
+        fi
+        
+    - name: Copy documentation files
+      run: |
+        cd wiki
+        
+        # 复制所有 markdown 文件到 wiki
+        find ../.qoder/repowiki/zh -name "*.md" | while read file; do
+          filename=$(basename "$file")
+          echo "Copying $file to wiki..."
+          cp "$file" "$filename"
+        done
+        
+        # 更新 Home.md 的文档导航部分
+        if [ -f "Home.md" ]; then
+          # 提取 Home.md 中非导航部分的内容
+          sed '/## 文档导航/,$d' Home.md > temp_home.md
+          
+          cat >> temp_home.md << 'NAVEOF'
+        ## 文档导航
+        
+        NAVEOF
+          
+          # 重新生成导航链接
+          find ../.qoder/repowiki/zh -name "*.md" | while read file; do
+            filename=$(basename "$file" .md)
+            title=$(head -n 1 "$file" | sed 's/^# //' || echo "$filename")
+            echo "- [$title]($filename)" >> temp_home.md
+          done
+          
+          cat >> temp_home.md << 'ENDNAVEOF'
+        
+        ---
+        
+        *此文档由 GitHub Actions 自动生成和更新*
+        ENDNAVEOF
+          
+          mv temp_home.md Home.md
+        fi
+        
+    - name: Commit and push to wiki
+      run: |
+        cd wiki
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        git add .
+        
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Auto-update documentation from .qoder/repowiki/zh
+          
+          Updated on: $(date)
+          Commit: ${{ github.sha }}"
+          
+          git push
+          echo "✅ Wiki updated successfully!"
+        fi
