@@ -33,7 +33,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
   datasetId, 
   category, 
   onSubmit, 
-  onCancel 
+  onCancel: _onCancel 
 }) => {
   // 检查是否已经跳转到创建任务页面
   const [isRedirected, setIsRedirected] = useState(false);
@@ -761,14 +761,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
             </>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={onCancel}
-                className="btn btn-secondary"
-                disabled={isSubmitting}
-              >
-                取消
-              </button>
               <button
                 type="submit"
                 className="btn btn-primary"
