@@ -1313,6 +1313,248 @@
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4) !important;
 }
 
+/* DataDumpForm 样式 */
+.data-dump-form {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    margin: 16px 0 !important;
+    border: 1px solid #e1e5e9 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+.form-header {
+    margin-bottom: 20px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px solid #e1e5e9 !important;
+}
+
+.form-header h3 {
+    margin: 0 0 8px 0 !important;
+    font-size: 18px !important;
+    color: #2c3e50 !important;
+    font-weight: 600 !important;
+}
+
+.dataset-storage-info {
+    background: #f8f9fa !important;
+    padding: 12px !important;
+    border-radius: 6px !important;
+    margin-bottom: 16px !important;
+    border-left: 3px solid #007bff !important;
+}
+
+.error-icon {
+    color: #dc3545 !important;
+    margin-right: 8px !important;
+}
+
+.dump-form {
+    margin-top: 16px !important;
+}
+
+.form-hint {
+    display: block !important;
+    color: #6c757d !important;
+    font-size: 12px !important;
+    margin-top: 4px !important;
+    line-height: 1.4 !important;
+}
+
+.form-actions {
+    display: flex !important;
+    gap: 12px !important;
+    margin-top: 20px !important;
+    justify-content: flex-end !important;
+}
+
+/* MessageDisplay 样式 */
+.message-close {
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    padding: 4px !important;
+    border-radius: 4px !important;
+    color: #6c757d !important;
+    font-size: 16px !important;
+    transition: all 0.2s ease !important;
+}
+
+.message-close:hover {
+    background: #f8f9fa !important;
+    color: #495057 !important;
+}
+
+/* 任务结果显示样式 */
+.task-result {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    margin: 16px 0 !important;
+    border: 1px solid #e1e5e9 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+.task-result.success {
+    border-left: 4px solid #28a745 !important;
+}
+
+.task-result.error {
+    border-left: 4px solid #dc3545 !important;
+}
+
+.task-result-header {
+    margin-bottom: 16px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px solid #e1e5e9 !important;
+}
+
+.task-result-header h4 {
+    margin: 0 !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+}
+
+.task-result.success .task-result-header h4 {
+    color: #28a745 !important;
+}
+
+.task-result.error .task-result-header h4 {
+    color: #dc3545 !important;
+}
+
+.task-result-details {
+    margin-bottom: 16px !important;
+}
+
+.task-result-item {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 8px 0 !important;
+    border-bottom: 1px solid #f8f9fa !important;
+}
+
+.task-result-item:last-child {
+    border-bottom: none !important;
+}
+
+.task-result-label {
+    font-weight: 500 !important;
+    color: #495057 !important;
+    font-size: 14px !important;
+}
+
+.task-result-value {
+    color: #212529 !important;
+    font-size: 14px !important;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+    background: #f8f9fa !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    border: 1px solid #e9ecef !important;
+}
+
+.task-result-error {
+    margin-bottom: 16px !important;
+    padding: 12px !important;
+    background: #f8d7da !important;
+    border: 1px solid #f5c6cb !important;
+    border-radius: 6px !important;
+}
+
+.task-result-error p {
+    margin: 0 !important;
+    color: #721c24 !important;
+    font-size: 14px !important;
+}
+
+.task-result-actions {
+    display: flex !important;
+    gap: 12px !important;
+    justify-content: flex-end !important;
+}
+
+/* 按钮样式 - 现代化设计 */
+.btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 12px 24px !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+    min-width: 120px !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.btn::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+    transition: left 0.5s !important;
+}
+
+.btn:hover::before {
+    left: 100% !important;
+}
+
+.btn:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    color: white !important;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3) !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 15px -3px rgba(59, 130, 246, 0.4) !important;
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0) !important;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3) !important;
+}
+
+.btn-secondary {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border: 2px solid #e2e8f0 !important;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    transform: translateY(-1px) !important;
+}
+
+.btn-outline {
+    background: transparent !important;
+    color: #64748b !important;
+    border: 2px solid #e2e8f0 !important;
+}
+
+.btn-outline:hover:not(:disabled) {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
+}
+
 .btn-icon {
     font-size: 16px !important;
     line-height: 1 !important;

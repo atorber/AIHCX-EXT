@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { aihcApiService, ResourcePool, Queue, PFSInstance } from '../services/aihcApi';
+import { createDataDumpTask, DataDumpTaskConfig, TaskCreateResponse } from '../services/dataDumpApi';
 
 interface DataDumpFormProps {
   datasetId: string;
@@ -9,6 +10,8 @@ interface DataDumpFormProps {
 }
 
 interface DataDumpConfig {
+  datasetId: string;
+  datasetName: string;
   resourcePoolType: '自运维' | '全托管';
   resourcePoolId: string;
   queueId: string;
@@ -32,11 +35,15 @@ interface RequestManager {
 const DataDumpForm: React.FC<DataDumpFormProps> = ({ 
   datasetId, 
   category, 
-  onSubmit, 
+  onSubmit: _onSubmit, 
   onCancel: _onCancel 
 }) => {
   // 检查是否已经跳转到创建任务页面
   const [isRedirected, setIsRedirected] = useState(false);
+  
+  // 任务状态管理
+  const [taskResult, setTaskResult] = useState<TaskCreateResponse | null>(null);
+  const [showTaskResult, setShowTaskResult] = useState(false);
   
   // 检查localStorage中是否有任务配置数据
   useEffect(() => {
@@ -79,6 +86,8 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
   
   
   const [config, setConfig] = useState<DataDumpConfig>({
+    datasetId: datasetId,
+    datasetName: '',
     resourcePoolType: '自运维',
     resourcePoolId: '',
     queueId: '',
@@ -548,15 +557,39 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       e.preventDefault();
       setIsSubmitting(true);
       setError('');
+      setTaskResult(null);
+      setShowTaskResult(false);
 
-      if (onSubmit) {
-        await onSubmit(config);
+      // 构建任务配置
+      const taskConfig: DataDumpTaskConfig = {
+        datasetId: config.datasetId,
+        datasetName: config.datasetName,
+        sourcePath: config.originalStoragePath || config.storagePath,
+        targetPath: `/mnt/cluster/datasets/${config.datasetId}`,
+        resourcePoolId: config.resourcePoolId,
+        queueId: config.queueId,
+        pfsInstanceId: config.pfsId
+      };
+
+      console.log('提交数据转储任务:', taskConfig);
+
+      // 调用API创建任务
+      const result = await createDataDumpTask(taskConfig);
+      
+      setTaskResult(result);
+      setShowTaskResult(true);
+
+      if (result.success) {
+        console.log('任务创建成功:', result.result);
+        // 可以在这里添加成功提示
       } else {
-        throw new Error('onSubmit 函数未定义');
+        setError(result.error || '任务创建失败');
       }
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '提交失败，请重试';
       setError(errorMessage);
+      console.error('提交数据转储任务失败:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -588,6 +621,57 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         <div className="error-message">
           <span className="error-icon">⚠️</span>
           {error}
+        </div>
+      )}
+
+      {/* 任务结果显示 */}
+      {showTaskResult && taskResult && (
+        <div className={`task-result ${taskResult.success ? 'success' : 'error'}`}>
+          <div className="task-result-header">
+            <h4>{taskResult.success ? '✅ 任务创建成功' : '❌ 任务创建失败'}</h4>
+          </div>
+          {taskResult.success && taskResult.result && (
+            <div className="task-result-details">
+              <div className="task-result-item">
+                <span className="task-result-label">任务ID:</span>
+                <span className="task-result-value">{taskResult.result.jobId}</span>
+              </div>
+              <div className="task-result-item">
+                <span className="task-result-label">任务名称:</span>
+                <span className="task-result-value">{taskResult.result.jobName}</span>
+              </div>
+              <div className="task-result-item">
+                <span className="task-result-label">K8s名称:</span>
+                <span className="task-result-value">{taskResult.result.k8sName}</span>
+              </div>
+            </div>
+          )}
+          {!taskResult.success && (
+            <div className="task-result-error">
+              <p>{taskResult.error}</p>
+            </div>
+          )}
+          <div className="task-result-actions">
+            <button 
+              type="button" 
+              className="btn btn-secondary"
+              onClick={() => setShowTaskResult(false)}
+            >
+              关闭
+            </button>
+            {taskResult.success && (
+              <button 
+                type="button" 
+                className="btn btn-primary"
+                onClick={() => {
+                  // 可以添加跳转到任务详情页面的逻辑
+                  console.log('跳转到任务详情页面:', taskResult.result?.jobId);
+                }}
+              >
+                查看任务详情
+              </button>
+            )}
+          </div>
         </div>
       )}
 
