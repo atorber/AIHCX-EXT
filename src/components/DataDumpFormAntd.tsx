@@ -498,7 +498,11 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
           config: taskConfig,
           timestamp: new Date().toISOString()
         });
-        message.error('任务创建失败，请查看控制台');
+        
+        // 直接显示错误信息
+        const errorMsg = result.error || '任务创建失败';
+        setError(errorMsg);
+        message.error(errorMsg);
       }
 
     } catch (err) {
@@ -510,7 +514,10 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         config: config,
         timestamp: new Date().toISOString()
       });
-      message.error('操作失败');
+      
+      // 直接显示错误信息
+      setError(errorMessage);
+      message.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -693,7 +700,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         {error && (
           <Alert
             message="操作失败"
-            description="请查看控制台获取详细错误信息"
+            description={error}
             type="error"
             showIcon
             closable

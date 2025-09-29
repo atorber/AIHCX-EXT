@@ -8,7 +8,8 @@ import {
   deleteConfigProfile,
   setActiveConfigProfile,
   getActiveConfigProfile,
-  validateConfigProfile
+  validateConfigProfile,
+  getPluginConfig
 } from '../utils/config';
 import { callBecOpenApi } from '../utils/aihcOpenApi';
 
@@ -40,7 +41,34 @@ const MultiConfigManagerComponent: React.FC<MultiConfigManagerProps> = ({ onConf
       try {
         setIsLoading(true);
         const configManager = await getMultiConfigManager();
-        setManager(configManager);
+        
+        // 检查是否需要从单配置模式迁移数据
+        if (configManager.profiles.length === 0) {
+          const singleConfig = await getPluginConfig();
+          if (singleConfig.ak && singleConfig.sk) {
+            // 从单配置模式迁移数据
+            console.log('检测到单配置模式数据，正在迁移到多配置管理器...');
+            const migratedProfile = await addConfigProfile({
+              name: '默认配置',
+              ak: singleConfig.ak,
+              sk: singleConfig.sk,
+              host: singleConfig.host
+            });
+            
+            // 设置为激活配置
+            await setActiveConfigProfile(migratedProfile.id);
+            
+            // 重新加载管理器
+            const updatedManager = await getMultiConfigManager();
+            setManager(updatedManager);
+            
+            showMessage('success', '已从单配置模式迁移到多配置管理器');
+          } else {
+            setManager(configManager);
+          }
+        } else {
+          setManager(configManager);
+        }
         
         if (onConfigChange) {
           const activeProfile = await getActiveConfigProfile();
