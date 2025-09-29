@@ -1,10 +1,9 @@
 import React from 'react';
-import { Card, Space, Typography, Empty, Row, Col, Tag } from 'antd';
+import { Space, Typography, Empty, Row, Col, Tag } from 'antd';
 import { 
   FileTextOutlined, 
   RocketOutlined, 
   DatabaseOutlined,
-  InfoCircleOutlined,
   CopyOutlined,
   DownloadOutlined
 } from '@ant-design/icons';
@@ -43,31 +42,22 @@ const ContentArea: React.FC<ContentAreaProps> = ({
   if (taskParams.isDataDownloadPage) {
     return (
       <div style={{ 
-        padding: '20px',
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        padding: '12px',
+        background: '#f8f9fa',
         minHeight: '400px'
       }}>
-        <Card 
-          title={
-            <Space>
-              <DatabaseOutlined style={{ color: '#1890ff' }} />
-              <span>数据下载助手</span>
-            </Space>
-          }
-          style={{ 
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-            border: 'none',
-            overflow: 'hidden'
-          }}
-          headStyle={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            borderBottom: 'none'
-          }}
-        >
+        <div style={{
+          background: '#fff',
+          borderRadius: '8px',
+          padding: '16px',
+          border: '1px solid #e8e8e8'
+        }}>
+          <Space style={{ marginBottom: '16px' }}>
+            <DatabaseOutlined style={{ color: '#1890ff', fontSize: '16px' }} />
+            <Text strong style={{ fontSize: '14px' }}>数据下载助手</Text>
+          </Space>
           <DataDownloadInput />
-        </Card>
+        </div>
       </div>
     );
   }
@@ -85,16 +75,15 @@ const ContentArea: React.FC<ContentAreaProps> = ({
     
     return (
       <div style={{ 
-        padding: '20px',
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        padding: '12px',
+        background: '#f8f9fa',
         minHeight: '400px'
       }}>
         <div style={{
           background: '#fff',
-          borderRadius: '12px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-          overflow: 'hidden',
-          border: 'none'
+          borderRadius: '8px',
+          padding: '16px',
+          border: '1px solid #e8e8e8'
         }}>
           <DataDumpFormAntd
             datasetId={taskParams.datasetId || ''}
@@ -229,96 +218,86 @@ const ContentArea: React.FC<ContentAreaProps> = ({
 
   return (
     <div style={{ 
-      padding: '20px',
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      padding: '12px',
+      background: '#f8f9fa',
       minHeight: '400px'
     }}>
-      {/* 页面头部信息 */}
-      <Card 
-        style={{ 
-          borderRadius: '12px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          marginBottom: '16px',
-          border: 'none',
-          overflow: 'hidden'
-        }}
-        bodyStyle={{ padding: '16px 20px' }}
-      >
+      {/* 页面头部信息 - 简化布局 */}
+      <div style={{
+        background: '#fff',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        marginBottom: '12px',
+        border: '1px solid #e8e8e8'
+      }}>
         <Row align="middle" justify="space-between">
           <Col>
             <Space align="center">
               <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: `linear-gradient(135deg, ${tabInfo.color}20, ${tabInfo.color}40)`,
+                width: '32px',
+                height: '32px',
+                borderRadius: '6px',
+                background: `${tabInfo.color}20`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '18px',
+                fontSize: '14px',
                 color: tabInfo.color
               }}>
                 {tabInfo.icon}
               </div>
               <div>
-                <Text strong style={{ fontSize: '16px', color: '#333' }}>
+                <Text strong style={{ fontSize: '14px', color: '#333' }}>
                   {tabInfo.title}
                 </Text>
                 <br />
-                <Text type="secondary" style={{ fontSize: '12px' }}>
+                <Text type="secondary" style={{ fontSize: '11px' }}>
                   {tabInfo.description}
                 </Text>
               </div>
             </Space>
           </Col>
           <Col>
-            <Space>
-              <Tag color={tabInfo.color} style={{ borderRadius: '6px' }}>
-                共 {tabInfo.count} 项
-              </Tag>
-              <InfoCircleOutlined style={{ color: '#999', fontSize: '14px' }} />
-            </Space>
+            <Tag color={tabInfo.color} style={{ borderRadius: '4px', fontSize: '11px' }}>
+              {tabInfo.count} 项
+            </Tag>
           </Col>
         </Row>
-      </Card>
+      </div>
 
-      {/* 主要内容区域 */}
-      <Card 
-        style={{ 
-          borderRadius: '12px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-          border: 'none',
-          overflow: 'hidden',
-          minHeight: '300px'
-        }}
-        bodyStyle={{ padding: '0' }}
-      >
-        {renderTabContent()}
-      </Card>
-
-      {/* 底部操作提示 */}
+      {/* 主要内容区域 - 移除卡片嵌套 */}
       <div style={{
-        marginTop: '16px',
-        padding: '12px 16px',
-        background: 'rgba(255,255,255,0.8)',
+        background: '#fff',
         borderRadius: '8px',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255,255,255,0.2)'
+        border: '1px solid #e8e8e8',
+        minHeight: '300px'
+      }}>
+        {renderTabContent()}
+      </div>
+
+      {/* 底部操作提示 - 简化样式 */}
+      <div style={{
+        marginTop: '12px',
+        padding: '8px 12px',
+        background: '#f0f2f5',
+        borderRadius: '6px',
+        fontSize: '11px',
+        color: '#666'
       }}>
         <Row align="middle" justify="space-between">
           <Col>
-            <Space>
-              <CopyOutlined style={{ color: '#1890ff', fontSize: '12px' }} />
+            <Space size="small">
+              <CopyOutlined style={{ color: '#1890ff', fontSize: '11px' }} />
               <Text type="secondary" style={{ fontSize: '11px' }}>
-                点击复制按钮快速复制内容
+                点击复制按钮快速复制
               </Text>
             </Space>
           </Col>
           <Col>
-            <Space>
-              <DownloadOutlined style={{ color: '#52c41a', fontSize: '12px' }} />
+            <Space size="small">
+              <DownloadOutlined style={{ color: '#52c41a', fontSize: '11px' }} />
               <Text type="secondary" style={{ fontSize: '11px' }}>
-                支持导出为文件
+                支持导出文件
               </Text>
             </Space>
           </Col>

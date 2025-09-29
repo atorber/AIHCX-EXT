@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Typography, Button, Row, Col, Divider, Space } from 'antd';
+import { Typography, Button, Row, Col, Space } from 'antd';
 import { 
   ExclamationCircleOutlined, 
   LinkOutlined, 
@@ -79,208 +79,149 @@ const UnsupportedPage: React.FC<UnsupportedPageProps> = ({ currentUrl }) => {
 
   return (
     <div style={{ 
-      padding: '20px',
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      padding: '12px',
+      background: '#f8f9fa',
       minHeight: '500px'
     }}>
-      {/* 主要提示卡片 */}
-      <Card 
-        style={{ 
-          borderRadius: '16px',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-          marginBottom: '20px',
-          border: 'none',
-          overflow: 'hidden',
-          position: 'relative'
-        }}
-        bodyStyle={{ padding: '30px' }}
-      >
-        {/* 背景装饰 */}
+      {/* 主要提示区域 - 简化布局 */}
+      <div style={{
+        background: '#fff',
+        borderRadius: '8px',
+        padding: '20px',
+        marginBottom: '12px',
+        border: '1px solid #e8e8e8',
+        textAlign: 'center'
+      }}>
         <div style={{
-          position: 'absolute',
-          top: '-50%',
-          right: '-30%',
-          width: '300px',
-          height: '300px',
-          background: 'linear-gradient(135deg, #667eea20, #764ba220)',
+          width: '60px',
+          height: '60px',
           borderRadius: '50%',
-          zIndex: 0
-        }} />
+          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 16px',
+          fontSize: '24px',
+          color: 'white'
+        }}>
+          {alertInfo.icon}
+        </div>
+        <Title level={3} style={{ 
+          margin: '0 0 8px 0', 
+          color: '#333',
+          fontSize: '16px'
+        }}>
+          {alertInfo.message}
+        </Title>
+        <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '20px' }}>
+          {alertInfo.description}
+        </Text>
         
-        <div style={{
-          position: 'absolute',
-          bottom: '-40%',
-          left: '-20%',
-          width: '200px',
-          height: '200px',
-          background: 'linear-gradient(135deg, #764ba220, #667eea20)',
-          borderRadius: '50%',
-          zIndex: 0
-        }} />
+        <Button
+          type="primary"
+          icon={<LinkOutlined />}
+          href="https://console.bce.baidu.com/aihc"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            borderRadius: '6px',
+            height: '36px',
+            fontSize: '14px',
+            fontWeight: 500,
+            padding: '0 24px',
+            background: 'linear-gradient(135deg, #667eea, #764ba2)',
+            border: 'none'
+          }}
+        >
+          进入百舸AIHC控制台
+        </Button>
+      </div>
 
-        <Space direction="vertical" size="large" style={{ width: '100%', position: 'relative', zIndex: 1 }}>
-          {/* 状态图标和标题 */}
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px',
-              fontSize: '32px',
-              color: 'white',
-              boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)'
-            }}>
-              {alertInfo.icon}
-            </div>
-            <Title level={2} style={{ 
-              margin: 0, 
-              color: '#333',
-              fontWeight: 600
-            }}>
-              {alertInfo.message}
-            </Title>
-            <Text type="secondary" style={{ fontSize: '16px', lineHeight: 1.5 }}>
-              {alertInfo.description}
-            </Text>
-          </div>
-
-          {/* 操作按钮 */}
-          <div style={{ textAlign: 'center' }}>
-            <Button
-              type="primary"
-              size="large"
-              icon={<LinkOutlined />}
-              href="https://console.bce.baidu.com/aihc"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                borderRadius: '12px',
-                height: '48px',
-                fontSize: '16px',
-                fontWeight: 600,
-                padding: '0 32px',
-                background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                border: 'none',
-                boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 12px 40px rgba(102, 126, 234, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 8px 32px rgba(102, 126, 234, 0.3)';
-              }}
-            >
-              进入百舸AIHC控制台
-            </Button>
-          </div>
+      {/* 支持的功能页面 - 简化布局 */}
+      <div style={{
+        background: '#fff',
+        borderRadius: '8px',
+        padding: '16px',
+        border: '1px solid #e8e8e8'
+      }}>
+        <Space style={{ marginBottom: '16px' }}>
+          <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '16px' }} />
+          <Text strong style={{ fontSize: '14px' }}>支持的功能页面</Text>
         </Space>
-      </Card>
-
-      {/* 支持的功能页面 */}
-      <Card 
-        title={
-          <Space>
-            <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '18px' }} />
-            <span style={{ fontSize: '18px', fontWeight: 600 }}>支持的功能页面</span>
-          </Space>
-        }
-        style={{ 
-          borderRadius: '16px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-          border: 'none'
-        }}
-        headStyle={{
-          background: 'linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%)',
-          borderRadius: '16px 16px 0 0',
-          borderBottom: '1px solid #d9f7be'
-        }}
-      >
-        <Row gutter={[16, 16]}>
+        
+        <Row gutter={[8, 8]}>
           {supportedPages.map((item, index) => (
             <Col span={12} key={index}>
-              <Card 
-                size="small"
-                style={{ 
-                  height: '100%',
-                  borderRadius: '12px',
-                  border: `1px solid ${item.color}20`,
-                  background: `${item.color}05`,
-                  transition: 'all 0.3s ease'
-                }}
-                bodyStyle={{ padding: '16px' }}
-                hoverable
-              >
-                <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                  <Space align="center">
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      background: `${item.color}20`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: item.color,
-                      fontSize: '16px'
-                    }}>
-                      {item.icon}
-                    </div>
-                    <Text strong style={{ fontSize: '14px', color: '#333' }}>
+              <div style={{ 
+                padding: '12px',
+                borderRadius: '6px',
+                border: `1px solid ${item.color}30`,
+                background: `${item.color}08`,
+                height: '100%'
+              }}>
+                <Space align="center" style={{ width: '100%' }}>
+                  <div style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '4px',
+                    background: `${item.color}20`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: item.color,
+                    fontSize: '12px'
+                  }}>
+                    {item.icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <Text strong style={{ fontSize: '12px', color: '#333' }}>
                       {item.name}
                     </Text>
-                  </Space>
-                  {item.hint && (
-                    <Text type="secondary" style={{ fontSize: '12px', lineHeight: 1.4 }}>
-                      <InfoCircleOutlined style={{ marginRight: '4px' }} />
-                      {item.hint}
-                    </Text>
-                  )}
+                    {item.hint && (
+                      <div>
+                        <Text type="secondary" style={{ fontSize: '10px', lineHeight: 1.3 }}>
+                          <InfoCircleOutlined style={{ marginRight: '2px', fontSize: '10px' }} />
+                          {item.hint}
+                        </Text>
+                      </div>
+                    )}
+                  </div>
                 </Space>
-              </Card>
+              </div>
             </Col>
           ))}
         </Row>
         
-        <Divider style={{ margin: '20px 0' }} />
-        
         {/* 当前页面信息 */}
         {currentUrl && (
           <div style={{
-            padding: '16px',
-            background: 'rgba(0,0,0,0.02)',
-            borderRadius: '8px',
-            border: '1px solid #f0f0f0'
+            marginTop: '16px',
+            padding: '12px',
+            background: '#f5f5f5',
+            borderRadius: '6px',
+            border: '1px solid #e8e8e8'
           }}>
-            <Space direction="vertical" size="small" style={{ width: '100%' }}>
-              <Text type="secondary" style={{ fontSize: '12px', fontWeight: 500 }}>
-                <InfoCircleOutlined style={{ marginRight: '4px' }} />
-                当前页面：
-              </Text>
-              <Text 
-                code 
-                style={{ 
-                  fontSize: '12px',
-                  wordBreak: 'break-all',
-                  background: '#f5f5f5',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  display: 'block',
-                  border: '1px solid #e8e8e8'
-                }}
-              >
-                {currentUrl}
-              </Text>
-            </Space>
+            <Text type="secondary" style={{ fontSize: '11px', fontWeight: 500, display: 'block', marginBottom: '6px' }}>
+              <InfoCircleOutlined style={{ marginRight: '4px', fontSize: '11px' }} />
+              当前页面：
+            </Text>
+            <Text 
+              code 
+              style={{ 
+                fontSize: '10px',
+                wordBreak: 'break-all',
+                background: '#fff',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                display: 'block',
+                border: '1px solid #d9d9d9'
+              }}
+            >
+              {currentUrl}
+            </Text>
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 };
