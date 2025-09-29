@@ -151,7 +151,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
                 }}>
                   {tab.label}
                 </span>
-                {tab.count > 0 && (
+                {tab.count > 0 && !['dataImport', 'modelDeployment'].includes(tab.key) && (
                   <Badge 
                     count={tab.count} 
                     size="small" 

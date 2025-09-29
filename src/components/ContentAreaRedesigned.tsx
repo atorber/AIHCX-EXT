@@ -283,48 +283,50 @@ const ContentArea: React.FC<ContentAreaProps> = ({
       background: '#ffffff',
       minHeight: '400px'
     }}>
-      {/* 页面头部信息 - 简化布局 */}
-      <div style={{
-        background: '#fafafa',
-        borderRadius: '6px',
-        padding: '8px 12px',
-        marginBottom: '8px',
-        border: '1px solid #f0f0f0'
-      }}>
-        <Row align="middle" justify="space-between">
-          <Col>
-            <Space align="center" size={6}>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '4px',
-                background: `${tabInfo.color}15`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '12px',
-                color: tabInfo.color
-              }}>
-                {tabInfo.icon}
-              </div>
-              <div>
-                <Text strong style={{ fontSize: '13px', color: '#333' }}>
-                  {tabInfo.title}
-                </Text>
-                <br />
-                <Text type="secondary" style={{ fontSize: '10px' }}>
-                  {tabInfo.description}
-                </Text>
-              </div>
-            </Space>
-          </Col>
-          <Col>
-            <Tag color={tabInfo.color} style={{ borderRadius: '3px', fontSize: '10px', padding: '1px 6px' }}>
-              {tabInfo.count} 项
-            </Tag>
-          </Col>
-        </Row>
-      </div>
+      {/* 页面头部信息 - 表单类型页面不显示 */}
+      {!['dataImport', 'modelDeployment'].includes(activeTab) && (
+        <div style={{
+          background: '#fafafa',
+          borderRadius: '6px',
+          padding: '8px 12px',
+          marginBottom: '8px',
+          border: '1px solid #f0f0f0'
+        }}>
+          <Row align="middle" justify="space-between">
+            <Col>
+              <Space align="center" size={6}>
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '4px',
+                  background: `${tabInfo.color}15`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  color: tabInfo.color
+                }}>
+                  {tabInfo.icon}
+                </div>
+                <div>
+                  <Text strong style={{ fontSize: '13px', color: '#333' }}>
+                    {tabInfo.title}
+                  </Text>
+                  <br />
+                  <Text type="secondary" style={{ fontSize: '10px' }}>
+                    {tabInfo.description}
+                  </Text>
+                </div>
+              </Space>
+            </Col>
+            <Col>
+              <Tag color={tabInfo.color} style={{ borderRadius: '3px', fontSize: '10px', padding: '1px 6px' }}>
+                {tabInfo.count} 项
+              </Tag>
+            </Col>
+          </Row>
+        </div>
+      )}
 
       {/* 主要内容区域 - 移除卡片嵌套 */}
       <div style={{

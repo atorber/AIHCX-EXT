@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Select, Input, Button, message, Alert, Spin } from 'antd';
-import { RocketOutlined, SendOutlined, ReloadOutlined } from '@ant-design/icons';
+import { SendOutlined, ReloadOutlined } from '@ant-design/icons';
 import { aihcApiService } from '../services/aihcApi';
 
 const { Option } = Select;
@@ -329,18 +329,6 @@ const ModelDeploymentForm: React.FC<ModelDeploymentFormProps> = ({ modelId, onSu
 
   return (
     <div style={{ padding: '8px' }}>
-      {/* 表单标题 */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        marginBottom: '12px',
-        padding: '8px 0',
-        borderBottom: '1px solid #f0f0f0'
-      }}>
-        <RocketOutlined style={{ color: '#1890ff', marginRight: '6px' }} />
-        <span style={{ fontSize: '13px', fontWeight: 600 }}>🚀 模型服务部署</span>
-      </div>
-
       <Form
         form={form}
         layout="vertical"

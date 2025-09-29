@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Form, Select, Input, Button, message, Alert, Spin } from 'antd';
-import { CloudDownloadOutlined, SendOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
+import { SendOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
 import { aihcApiService, ResourcePool, Queue } from '../services/aihcApi';
 
 const { Option } = Select;
@@ -370,18 +370,6 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
 
   return (
     <div style={{ padding: '8px' }}>
-      {/* 表单标题 */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        marginBottom: '12px',
-        padding: '8px 0',
-        borderBottom: '1px solid #f0f0f0'
-      }}>
-        <CloudDownloadOutlined style={{ color: '#1890ff', marginRight: '6px' }} />
-        <span style={{ fontSize: '13px', fontWeight: 600 }}>📥 数据导入任务</span>
-      </div>
-
       <Form
         form={form}
         layout="vertical"
