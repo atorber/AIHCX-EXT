@@ -24,35 +24,15 @@ const PopupContainer: React.FC<PopupContainerProps> = () => {
   // 全局错误监听
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
-      console.error('[PopupContainer] 🔥 全局错误捕获:', event.error);
-      console.debug('[PopupContainer] 错误消息:', event.message);
-      console.debug('[PopupContainer] 错误文件:', event.filename);
-      console.debug('[PopupContainer] 错误行号:', event.lineno);
+      console.error('[PopupContainer] 全局错误捕获:', event.error);
     };
     
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('[PopupContainer] 🔥 未处理的Promise拒绝:', event.reason);
+      console.error('[PopupContainer] 未处理的Promise拒绝:', event.reason);
     };
     
     window.addEventListener('error', handleError);
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
-    
-    // 添加一个立即可见的调试标记
-    if (typeof document !== 'undefined') {
-      const debugDiv = document.createElement('div');
-      debugDiv.style.cssText = 'position:fixed;top:0;left:0;background:purple;color:white;padding:5px;z-index:99999;';
-      debugDiv.textContent = `PopupContainer加载: ${new Date().toLocaleTimeString()}`;
-      document.body.appendChild(debugDiv);
-      setTimeout(() => {
-        if (document.body.contains(debugDiv)) {
-          document.body.removeChild(debugDiv);
-        }
-      }, 3000);
-    }
-    
-    console.debug('[PopupContainer] 组件已初始化');
-    console.warn('[PopupContainer] ⚠️ 组件已初始化 - WARN');
-    console.error('[PopupContainer] ❌ 组件已初始化 - ERROR（用于调试）');
     
     return () => {
       window.removeEventListener('error', handleError);
@@ -146,23 +126,26 @@ ${headers.join('\n')}`;
 
   // 处理URL获取
   const handleFetchUrl = async (pageName: string, _url: string, params: Record<string, string>) => {
-    console.log('[AIHC助手] 🔄 开始处理页面:', pageName, params);
-    console.log('[AIHC助手] 🔄 当前状态:', {
-      isDataDownloadPage: taskParams.isDataDownloadPage,
-      isDataDumpPage: taskParams.isDataDumpPage,
-      activeTab,
-      isLoading
-    });
+    // 处理页面信息
+    // 开发环境下记录当前状态
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AIHC助手] 当前状态:', {
+        isDataDownloadPage: taskParams.isDataDownloadPage,
+        isDataDumpPage: taskParams.isDataDumpPage,
+        activeTab,
+        isLoading
+      });
+    }
     
     // 防止重复加载
     if (isLoading) {
-      console.log('[AIHC助手] 正在加载中，跳过重复请求');
+      // 正在加载中，跳过重复请求
       return;
     }
     
     try {
       setIsLoading(true);
-      console.log('[AIHC助手] 设置加载状态为true');
+      // 设置加载状态为true
       
       // 使用页面处理器管理器处理页面
       console.log('[AIHC助手] 调用页面处理器管理器');
@@ -261,7 +244,7 @@ ${headers.join('\n')}`;
       setIsLoading(true);
       setTaskParams(prev => ({ ...prev, chatLoading: true, chatError: undefined }));
       
-      console.log('[AIHC助手] 开始加载Chat配置，serviceId:', serviceId);
+      // 加载Chat配置
       
       // 调用API获取服务详情
       const apiUrl = `https://console.bce.baidu.com/api/aihcpom/app/v1/details?appId=${serviceId}&locale=zh-cn&_=${Date.now()}`;

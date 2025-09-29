@@ -365,32 +365,33 @@ class AIHCApiService {
     queueId: string,
     taskTemplate: any
   ): Promise<TaskSubmissionResult> {
-    console.log('[AIHCApiService] ==> submitDataDumpTask 开始');
-    console.log('[AIHCApiService] 接收参数:', {
-      resourcePoolId,
-      queueId,
-      taskTemplateType: typeof taskTemplate,
-      taskTemplateKeys: taskTemplate ? Object.keys(taskTemplate) : 'null'
-    });
+    // 开始提交数据转储任务
+    // 开发环境下记录参数
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AIHCApiService] 接收参数:', {
+        resourcePoolId,
+        queueId,
+        taskTemplateType: typeof taskTemplate,
+        taskTemplateKeys: taskTemplate ? Object.keys(taskTemplate) : 'null'
+      });
+    }
     
-    // 在页面上显示API调用信息
-    if (typeof document !== 'undefined') {
+    // 开发环境下在页面上显示API调用信息
+    if (process.env.NODE_ENV === 'development' && typeof document !== 'undefined') {
       const apiDiv = document.createElement('div');
       apiDiv.style.cssText = 'position:fixed;top:450px;right:0;background:navy;color:white;padding:10px;z-index:99999;max-width:350px;word-wrap:break-word;font-size:12px;';
       apiDiv.innerHTML = `
-        <div><strong>🚀 API调用开始</strong></div>
+        <div><strong>🚀 API调用开始 (开发模式)</strong></div>
         <div>资源池ID: ${resourcePoolId}</div>
         <div>队列ID: ${queueId}</div>
-        <div>模板类型: ${typeof taskTemplate}</div>
-        <div>模板字段: ${taskTemplate ? Object.keys(taskTemplate).join(', ') : 'null'}</div>
-        <div>时间: ${new Date().toLocaleTimeString()}</div>
+        <button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;padding:2px 5px;border-radius:2px;cursor:pointer;margin-top:5px;">关闭</button>
       `;
       document.body.appendChild(apiDiv);
       setTimeout(() => {
         if (document.body.contains(apiDiv)) {
           document.body.removeChild(apiDiv);
         }
-      }, 10000);
+      }, 5000);
     }
     
     // 参数验证
@@ -419,96 +420,61 @@ class AIHCApiService {
     
     const requestBody = JSON.stringify(taskTemplate);
     
-    // localStorage记录API调用
-    if (typeof localStorage !== 'undefined') {
+    // 记录API调用信息（仅开发环境）
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AIHCApiService] 提交数据转储任务:', { resourcePoolId, queueId });
+    }
+    
+    // 格式化请求体（仅开发环境）
+    if (process.env.NODE_ENV === 'development') {
       try {
-        const debugLog = {
-          component: 'AIHCApiService',
-          action: 'submitDataDumpTask_start',
-          timestamp: new Date().toISOString(),
-          params: { resourcePoolId, queueId },
-          taskTemplate: taskTemplate,
-          requestBody: requestBody,
-          url: url,
-          clusterId: clusterId,
-          isServerless: isServerless
-        };
-        localStorage.setItem('aihc_debug_api_start', JSON.stringify(debugLog));
-        
-        // 单独保存请求体内容，方便查看
-        localStorage.setItem('aihc_debug_request_body', requestBody);
-        localStorage.setItem('aihc_debug_request_body_formatted', JSON.stringify(taskTemplate, null, 2));
-      } catch (e) {}
-    }
-    console.log('[AIHCApiService] 请求体大小:', requestBody.length, '字节');
-    console.log('[AIHCApiService] 请求体内容预览:', requestBody.substring(0, 500) + '...');
-    
-    // 打印完整的请求体内容
-    console.log('[AIHCApiService] ===== 完整请求体内容开始 =====');
-    console.log(requestBody);
-    console.log('[AIHCApiService] ===== 完整请求体内容结束 =====');
-    
-    // 格式化打印请求体
-    try {
-      const formattedBody = JSON.stringify(JSON.parse(requestBody), null, 2);
-      console.log('[AIHCApiService] ===== 格式化请求体内容开始 =====');
-      console.log(formattedBody);
-      console.log('[AIHCApiService] ===== 格式化请求体内容结束 =====');
-    } catch (e) {
-      console.error('[AIHCApiService] 请求体JSON格式化失败:', e);
+        const formattedBody = JSON.stringify(JSON.parse(requestBody), null, 2);
+        console.log('[AIHCApiService] 请求体内容:', formattedBody);
+      } catch (e) {
+        console.error('[AIHCApiService] 请求体JSON格式化失败:', e);
+      }
     }
     
-    // 在页面上显示请求详情
-    if (typeof document !== 'undefined') {
+    // 开发环境下在页面上显示请求详情
+    if (process.env.NODE_ENV === 'development' && typeof document !== 'undefined') {
       const requestDiv = document.createElement('div');
       requestDiv.style.cssText = 'position:fixed;top:550px;right:0;background:teal;color:white;padding:10px;z-index:99999;max-width:500px;word-wrap:break-word;font-size:11px;max-height:400px;overflow-y:auto;';
       requestDiv.innerHTML = `
-        <div><strong>📤 HTTP请求详情</strong></div>
+        <div><strong>📤 HTTP请求详情 (开发模式)</strong></div>
         <div>URL: ${url}</div>
-        <div>方法: POST</div>
         <div>资源池类型: ${isServerless ? 'serverless' : 'normal'}</div>
-        <div>集群ID: ${clusterId}</div>
-        <div>请求体大小: ${requestBody.length} 字节</div>
         <div>任务名称: ${taskTemplate.name}</div>
-        <div>队列: ${taskTemplate.queue}</div>
-        <div>PFS ID: ${taskTemplate.pfsId}</div>
-        <div><strong>请求体预览:</strong></div>
-        <div style="background:rgba(0,0,0,0.3);padding:5px;margin:5px 0;border-radius:3px;font-family:monospace;font-size:10px;">
-          ${requestBody.substring(0, 800)}${requestBody.length > 800 ? '...' : ''}
-        </div>
-        <div style="font-size:10px;color:#ccc;">完整内容请查看控制台日志</div>
+        <button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;padding:2px 5px;border-radius:2px;cursor:pointer;margin-top:5px;">关闭</button>
       `;
       document.body.appendChild(requestDiv);
       setTimeout(() => {
         if (document.body.contains(requestDiv)) {
           document.body.removeChild(requestDiv);
         }
-      }, 20000);
+      }, 10000);
     }
     
     try {
-      console.log('[AIHCApiService] 开始发送HTTP请求...');
+      // 发送HTTP请求
       
       // 获取百度云认证Token
       const baiduAuthToken = this.getBaiduAuthToken();
-      console.log('[AIHCApiService] 获取到百度云认证Token:', baiduAuthToken ? '已获取' : '未获取');
       
-      // 在页面上显示认证Token信息
-      if (typeof document !== 'undefined') {
+      // 开发环境下显示认证Token信息
+      if (process.env.NODE_ENV === 'development' && typeof document !== 'undefined') {
         const authDiv = document.createElement('div');
         authDiv.style.cssText = 'position:fixed;top:750px;right:0;background:darkblue;color:white;padding:10px;z-index:99999;max-width:350px;word-wrap:break-word;font-size:11px;';
         authDiv.innerHTML = `
-          <div><strong>🔐 百度云认证Token</strong></div>
+          <div><strong>🔐 百度云认证Token (开发模式)</strong></div>
           <div>Token: ${baiduAuthToken ? baiduAuthToken.substring(0, 20) + '...' : '未获取'}</div>
-          <div>长度: ${baiduAuthToken ? baiduAuthToken.length : 0} 字符</div>
-          <div>时间: ${new Date().toLocaleTimeString()}</div>
+          <button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;padding:2px 5px;border-radius:2px;cursor:pointer;margin-top:5px;">关闭</button>
         `;
         document.body.appendChild(authDiv);
         setTimeout(() => {
           if (document.body.contains(authDiv)) {
             document.body.removeChild(authDiv);
           }
-        }, 10000);
+        }, 5000);
       }
       
       // 构建请求头，模拟百度云控制台的请求
@@ -642,15 +608,12 @@ class AIHCApiService {
         throw new Error(`API请求失败，状态码: ${response.status}, 错误信息: ${errorText}`);
       }
       
-      console.log('[AIHCApiService] 开始解析JSON响应...');
+      // 解析JSON响应
       const result = await response.json();
-      console.log('[AIHCApiService] JSON解析完成，响应数据:', result);
-      console.log('[AIHCApiService] 响应数据结构:', {
-        success: result.success,
-        resultKeys: result.result ? Object.keys(result.result) : 'null',
-        code: result.code,
-        message: result.message
-      });
+      // 开发环境下记录响应数据
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AIHCApiService] 响应数据:', result);
+      }
       
       if (!result.success) {
         const apiError = result.message || '任务提交失败';
@@ -719,23 +682,9 @@ class AIHCApiService {
     } catch (error) {
       console.error('[AIHCApiService] ❌ submitDataDumpTask 发生异常:', error);
       
-      // localStorage记录API错误
-      if (typeof localStorage !== 'undefined') {
-        try {
-          const debugLog = {
-            component: 'AIHCApiService',
-            action: 'submitDataDumpTask_error',
-            timestamp: new Date().toISOString(),
-            error: error instanceof Error ? {
-              name: error.name,
-              message: error.message,
-              stack: error.stack
-            } : String(error),
-            params: { resourcePoolId, queueId },
-            taskTemplate: taskTemplate
-          };
-          localStorage.setItem('aihc_debug_api_error', JSON.stringify(debugLog));
-        } catch (e) {}
+      // 记录错误信息（仅开发环境）
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[AIHCApiService] 数据转储任务提交失败:', error);
       }
       
       if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -850,7 +799,7 @@ class AIHCApiService {
 
   // 获取PFS实例列表（通过专门的存储信息接口获取）
   async getPFSInstances(resourcePoolId: string, resourcePoolType: 'common' | 'serverless', abortController?: AbortController): Promise<PFSInstance[]> {
-    console.log(`开始获取PFS实例 - 资源池ID: ${resourcePoolId}, 类型: ${resourcePoolType}`);
+    // 获取PFS实例
     
     try {
       if (resourcePoolType === 'common') {
@@ -1029,7 +978,7 @@ class AIHCApiService {
 
   // 通过页面注入脚本提交任务 - 绕过CSRF限制
   async submitDataDumpTaskViaPageScript(taskTemplate: DataDumpTaskTemplate, resourcePoolId: string): Promise<any> {
-    console.log('[AIHCApiService] 开始页面注入脚本提交任务');
+    // 页面注入脚本提交任务
     
     try {
       // 使用页面注入脚本提交任务
