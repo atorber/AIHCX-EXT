@@ -410,6 +410,54 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
     setConfig(updatedConfig);
   };
 
+  // 重置表单到默认状态
+  const handleReset = () => {
+    // 重置表单字段
+    form.resetFields();
+    
+    // 重置到默认状态
+    const defaultConfig = {
+      datasetId,
+      datasetName: datasetInfo?.datasetName || '',
+      resourcePoolType: '自运维' as '自运维' | '全托管',
+      resourcePoolId: '',
+      queueId: '',
+      pfsId: '',
+      storagePath: datasetInfo?.datasetStoragePath?.replace(/^bos:/, '') || '',
+      originalStoragePath: datasetInfo?.datasetStoragePath || ''
+    };
+    
+    setConfig(defaultConfig);
+    form.setFieldsValue(defaultConfig);
+    
+    // 清空下级数据
+    setQueues([]);
+    setPfsInstances([]);
+    setError('');
+    setShowTaskResult(false);
+    
+    // 重新加载资源池列表并自动选择第一个
+    if (resourcePools.length > 0) {
+      // 如果已有资源池列表，直接选择第一个
+      const firstPool = resourcePools[0];
+      const updatedConfig = {
+        ...defaultConfig,
+        resourcePoolId: firstPool.resourcePoolId,
+        queueId: '',
+        pfsId: ''
+      };
+      setConfig(updatedConfig);
+      form.setFieldsValue(updatedConfig);
+      
+      // 自动获取队列和PFS实例
+      fetchQueues(firstPool.resourcePoolId);
+      fetchPfsInstances(firstPool.resourcePoolId);
+    } else {
+      // 如果没有资源池列表，重新加载
+      fetchResourcePools('自运维');
+    }
+  };
+
   // 提交表单
   const handleSubmit = async () => {
     try {
@@ -651,6 +699,34 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
             closable
             onClose={() => setError('')}
             style={{ marginBottom: '8px', fontSize: '11px' }}
+            closeIcon={
+              <span style={{ 
+                color: '#fff !important', 
+                fontSize: '12px !important',
+                fontWeight: 'bold !important',
+                cursor: 'pointer !important',
+                padding: '0 !important',
+                margin: '0 !important',
+                borderRadius: '2px !important',
+                backgroundColor: 'rgba(255, 255, 255, 0.2) !important',
+                border: 'none !important',
+                outline: 'none !important',
+                boxShadow: 'none !important',
+                transition: 'background-color 0.2s',
+                display: 'inline-flex !important',
+                alignItems: 'center !important',
+                justifyContent: 'center !important',
+                minWidth: '16px !important',
+                maxWidth: '16px !important',
+                width: '16px !important',
+                height: '16px !important',
+                lineHeight: '1 !important',
+                textAlign: 'center',
+                verticalAlign: 'middle !important'
+              }}>
+                ×
+              </span>
+            }
           />
         )}
 
@@ -682,6 +758,34 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
             closable
             onClose={() => setShowTaskResult(false)}
             style={{ marginBottom: '8px', fontSize: '11px' }}
+            closeIcon={
+              <span style={{ 
+                color: `${taskResult.success ? '#52c41a' : '#fff'} !important`, 
+                fontSize: '12px !important',
+                fontWeight: 'bold !important',
+                cursor: 'pointer !important',
+                padding: '0 !important',
+                margin: '0 !important',
+                borderRadius: '2px !important',
+                backgroundColor: `${taskResult.success ? 'rgba(82, 196, 26, 0.1)' : 'rgba(255, 255, 255, 0.2)'} !important`,
+                border: 'none !important',
+                outline: 'none !important',
+                boxShadow: 'none !important',
+                transition: 'background-color 0.2s',
+                display: 'inline-flex !important',
+                alignItems: 'center !important',
+                justifyContent: 'center !important',
+                minWidth: '16px !important',
+                maxWidth: '16px !important',
+                width: '16px !important',
+                height: '16px !important',
+                lineHeight: '1 !important',
+                textAlign: 'center',
+                verticalAlign: 'middle !important'
+              }}>
+                ×
+              </span>
+            }
           />
         )}
 
@@ -706,24 +810,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
           </Button>
           
           <Button
-            onClick={() => {
-              form.resetFields();
-              setConfig({
-                datasetId,
-                datasetName: '',
-                resourcePoolType: '自运维',
-                resourcePoolId: '',
-                queueId: '',
-                pfsId: '',
-                storagePath: '',
-                originalStoragePath: ''
-              });
-              setResourcePools([]);
-              setQueues([]);
-              setPfsInstances([]);
-              setError('');
-              setShowTaskResult(false);
-            }}
+            onClick={handleReset}
             icon={<ReloadOutlined />}
             disabled={isRedirected}
             style={{ fontSize: '11px', height: '28px' }}
