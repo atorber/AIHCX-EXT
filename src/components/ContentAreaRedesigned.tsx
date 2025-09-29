@@ -8,7 +8,7 @@ import {
   DownloadOutlined,
   CloudDownloadOutlined
 } from '@ant-design/icons';
-import { TabType, TaskParams, DataDumpConfig, DataImportConfig } from '../types';
+import { TabType, TaskParams, DataDumpConfig, DataImportConfig, ModelDeploymentConfig } from '../types';
 import CLICommandTab from './tabs/CLICommandTab';
 import CommandScriptTab from './tabs/CommandScriptTab';
 import JSONParamsTab from './tabs/JSONParamsTab';
@@ -18,6 +18,7 @@ import ChatTab from './tabs/ChatTab';
 import DataDownloadInput from './DataDownloadInput';
 import DataDumpFormAntd from './DataDumpFormAntd';
 import DataImportForm from './DataImportForm';
+import ModelDeploymentForm from './ModelDeploymentForm';
 
 const { Text } = Typography;
 
@@ -30,6 +31,7 @@ interface ContentAreaProps {
   onLoadChatConfig?: (serviceId: string) => Promise<void>;
   onSubmitDataDump?: (config: DataDumpConfig) => Promise<void>;
   onSubmitDataImport?: (config: DataImportConfig) => Promise<void>;
+  onSubmitModelDeployment?: (config: ModelDeploymentConfig) => Promise<void>;
 }
 
 const ContentArea: React.FC<ContentAreaProps> = ({
@@ -40,7 +42,8 @@ const ContentArea: React.FC<ContentAreaProps> = ({
   onOpenUrl,
   onLoadChatConfig,
   onSubmitDataDump: _onSubmitDataDump,
-  onSubmitDataImport: _onSubmitDataImport
+  onSubmitDataImport: _onSubmitDataImport,
+  onSubmitModelDeployment: _onSubmitModelDeployment
 }) => {
   // 如果是数据下载页面，直接显示输入框
   if (taskParams.isDataDownloadPage) {
@@ -150,6 +153,13 @@ const ContentArea: React.FC<ContentAreaProps> = ({
         description: '数据导入任务',
         color: '#52c41a',
         count: taskParams.datasetId ? 1 : 0
+      },
+      modelDeployment: { 
+        icon: <RocketOutlined />, 
+        title: '部署在线服务', 
+        description: '模型服务部署',
+        color: '#1890ff',
+        count: taskParams.modelId ? 1 : 0
       }
     };
     return tabInfoMap[activeTab] || { icon: null, title: '未知', description: '', color: '#666', count: 0 };
@@ -225,6 +235,26 @@ const ContentArea: React.FC<ContentAreaProps> = ({
               <DataImportForm
                 datasetId={taskParams.datasetId}
                 onSubmit={_onSubmitDataImport}
+              />
+            </div>
+          </div>
+        );
+      case 'modelDeployment':
+        return (
+          <div style={{ 
+            padding: '12px',
+            background: '#f8f9fa',
+            minHeight: '400px'
+          }}>
+            <div style={{
+              background: '#fff',
+              borderRadius: '6px',
+              border: '1px solid #e8e8e8',
+              overflow: 'hidden'
+            }}>
+              <ModelDeploymentForm
+                modelId={taskParams.modelId}
+                onSubmit={_onSubmitModelDeployment}
               />
             </div>
           </div>

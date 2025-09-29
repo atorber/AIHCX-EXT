@@ -87,6 +87,14 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
       condition: pageName === '数据集详情' && !!taskParams.datasetId,
       count: taskParams.datasetId ? 1 : 0,
       color: '#52c41a'
+    },
+    { 
+      key: 'modelDeployment' as TabType, 
+      label: '部署在线服务', 
+      icon: <RocketOutlined />,
+      condition: pageName === '模型详情' && !!taskParams.modelId,
+      count: taskParams.modelId ? 1 : 0,
+      color: '#1890ff'
     }
   ];
 

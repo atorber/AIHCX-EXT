@@ -10,6 +10,7 @@ export class ModelDetailHandler extends BaseHandler {
     const modelId = params.modelId;
 
     return {
+      modelId: modelId,
       cliItems: [],
       apiDocs: [
         {

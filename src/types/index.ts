@@ -34,6 +34,7 @@ export interface TaskParams {
   isDataDownloadPage?: boolean;
   isDataDumpPage?: boolean;
   datasetId?: string;
+  modelId?: string;
   category?: string;
 }
 
@@ -71,7 +72,7 @@ export interface BaiduCredentials {
   endpoint?: string;
 }
 
-export type TabType = 'cli' | 'commandScript' | 'json' | 'yaml' | 'apiDocs' | 'chat' | 'dataImport';
+export type TabType = 'cli' | 'commandScript' | 'json' | 'yaml' | 'apiDocs' | 'chat' | 'dataImport' | 'modelDeployment';
 
 // 数据转储相关类型定义
 export interface DataDumpConfig {
@@ -90,6 +91,17 @@ export interface DataImportConfig {
   importUrl: string;
   datasetId?: string;
   datasetCategory?: string; // 数据集类别
+}
+
+// 模型部署相关类型定义
+export interface ModelDeploymentConfig {
+  modelVersion: string;
+  accelerationFramework: string;
+  resourcePoolType: '自运维' | '全托管';
+  resourcePoolId: string;
+  queueId: string;
+  startupCommand: string;
+  modelId?: string;
 }
 
 export interface DataDumpTaskTemplate {
