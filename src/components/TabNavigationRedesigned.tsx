@@ -6,7 +6,8 @@ import {
   FileTextOutlined, 
   UnorderedListOutlined, 
   BookOutlined, 
-  MessageOutlined 
+  MessageOutlined,
+  CloudDownloadOutlined
 } from '@ant-design/icons';
 import { TabType, TaskParams } from '../types';
 
@@ -78,6 +79,14 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
       condition: pageName === '在线服务部署详情' && !!taskParams.chatConfig,
       count: taskParams.chatConfig ? 1 : 0,
       color: '#eb2f96'
+    },
+    { 
+      key: 'dataImport' as TabType, 
+      label: '导入数据', 
+      icon: <CloudDownloadOutlined />,
+      condition: pageName === '数据集详情' && !!taskParams.datasetId,
+      count: taskParams.datasetId ? 1 : 0,
+      color: '#52c41a'
     }
   ];
 

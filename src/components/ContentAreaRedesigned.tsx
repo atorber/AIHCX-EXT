@@ -5,9 +5,10 @@ import {
   RocketOutlined, 
   DatabaseOutlined,
   CopyOutlined,
-  DownloadOutlined
+  DownloadOutlined,
+  CloudDownloadOutlined
 } from '@ant-design/icons';
-import { TabType, TaskParams, DataDumpConfig } from '../types';
+import { TabType, TaskParams, DataDumpConfig, DataImportConfig } from '../types';
 import CLICommandTab from './tabs/CLICommandTab';
 import CommandScriptTab from './tabs/CommandScriptTab';
 import JSONParamsTab from './tabs/JSONParamsTab';
@@ -16,6 +17,7 @@ import APIDocsTab from './tabs/APIDocsTab';
 import ChatTab from './tabs/ChatTab';
 import DataDownloadInput from './DataDownloadInput';
 import DataDumpFormAntd from './DataDumpFormAntd';
+import DataImportForm from './DataImportForm';
 
 const { Text } = Typography;
 
@@ -27,6 +29,7 @@ interface ContentAreaProps {
   onOpenUrl: (url: string) => void;
   onLoadChatConfig?: (serviceId: string) => Promise<void>;
   onSubmitDataDump?: (config: DataDumpConfig) => Promise<void>;
+  onSubmitDataImport?: (config: DataImportConfig) => Promise<void>;
 }
 
 const ContentArea: React.FC<ContentAreaProps> = ({
@@ -36,7 +39,8 @@ const ContentArea: React.FC<ContentAreaProps> = ({
   onSaveFile,
   onOpenUrl,
   onLoadChatConfig,
-  onSubmitDataDump: _onSubmitDataDump
+  onSubmitDataDump: _onSubmitDataDump,
+  onSubmitDataImport: _onSubmitDataImport
 }) => {
   // 如果是数据下载页面，直接显示输入框
   if (taskParams.isDataDownloadPage) {
@@ -139,6 +143,13 @@ const ContentArea: React.FC<ContentAreaProps> = ({
         description: '智能对话',
         color: '#eb2f96',
         count: taskParams.chatConfig ? 1 : 0
+      },
+      dataImport: { 
+        icon: <CloudDownloadOutlined />, 
+        title: '导入数据', 
+        description: '数据导入任务',
+        color: '#52c41a',
+        count: taskParams.datasetId ? 1 : 0
       }
     };
     return tabInfoMap[activeTab] || { icon: null, title: '未知', description: '', color: '#666', count: 0 };
@@ -197,6 +208,26 @@ const ContentArea: React.FC<ContentAreaProps> = ({
             error={taskParams.chatError}
             onLoadConfig={onLoadChatConfig}
           />
+        );
+      case 'dataImport':
+        return (
+          <div style={{ 
+            padding: '12px',
+            background: '#f8f9fa',
+            minHeight: '400px'
+          }}>
+            <div style={{
+              background: '#fff',
+              borderRadius: '6px',
+              border: '1px solid #e8e8e8',
+              overflow: 'hidden'
+            }}>
+              <DataImportForm
+                datasetId={taskParams.datasetId}
+                onSubmit={_onSubmitDataImport}
+              />
+            </div>
+          </div>
         );
       default:
         return (

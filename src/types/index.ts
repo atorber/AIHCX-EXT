@@ -71,7 +71,7 @@ export interface BaiduCredentials {
   endpoint?: string;
 }
 
-export type TabType = 'cli' | 'commandScript' | 'json' | 'yaml' | 'apiDocs' | 'chat';
+export type TabType = 'cli' | 'commandScript' | 'json' | 'yaml' | 'apiDocs' | 'chat' | 'dataImport';
 
 // 数据转储相关类型定义
 export interface DataDumpConfig {
@@ -82,6 +82,13 @@ export interface DataDumpConfig {
   storagePath: string;
   originalStoragePath?: string; // 新增：原始存储路径（带bos:前缀）
   datasetName?: string; // 数据集名称
+}
+
+// 数据导入相关类型定义
+export interface DataImportConfig {
+  importType: 'HuggingFace' | 'ModelScope' | '数据集';
+  importUrl: string;
+  datasetId?: string;
   datasetCategory?: string; // 数据集类别
 }
 

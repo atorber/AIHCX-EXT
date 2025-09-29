@@ -10,6 +10,7 @@ export class DatasetDetailHandler extends BaseHandler {
     const datasetId = params.datasetId;
 
     return {
+      datasetId: datasetId,
       cliItems: [],
       apiDocs: [
         {
