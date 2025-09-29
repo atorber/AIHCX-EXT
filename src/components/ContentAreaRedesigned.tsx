@@ -47,14 +47,14 @@ const ContentArea: React.FC<ContentAreaProps> = ({
         minHeight: '400px'
       }}>
         <div style={{
-          background: '#fff',
-          borderRadius: '8px',
-          padding: '16px',
+          background: '#ffffff',
+          borderRadius: '6px',
+          padding: '14px',
           border: '1px solid #e8e8e8'
         }}>
-          <Space style={{ marginBottom: '16px' }}>
-            <DatabaseOutlined style={{ color: '#1890ff', fontSize: '16px' }} />
-            <Text strong style={{ fontSize: '14px' }}>数据下载助手</Text>
+          <Space style={{ marginBottom: '14px' }}>
+            <DatabaseOutlined style={{ color: '#1890ff', fontSize: '14px' }} />
+            <Text strong style={{ fontSize: '13px' }}>数据下载助手</Text>
           </Space>
           <DataDownloadInput />
         </div>
@@ -80,9 +80,9 @@ const ContentArea: React.FC<ContentAreaProps> = ({
         minHeight: '400px'
       }}>
         <div style={{
-          background: '#fff',
-          borderRadius: '8px',
-          padding: '16px',
+          background: '#ffffff',
+          borderRadius: '6px',
+          padding: '14px',
           border: '1px solid #e8e8e8'
         }}>
           <DataDumpFormAntd
@@ -224,41 +224,41 @@ const ContentArea: React.FC<ContentAreaProps> = ({
     }}>
       {/* 页面头部信息 - 简化布局 */}
       <div style={{
-        background: '#fff',
-        borderRadius: '8px',
-        padding: '12px 16px',
-        marginBottom: '12px',
+        background: '#ffffff',
+        borderRadius: '6px',
+        padding: '10px 14px',
+        marginBottom: '10px',
         border: '1px solid #e8e8e8'
       }}>
         <Row align="middle" justify="space-between">
           <Col>
             <Space align="center">
               <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '6px',
+                width: '28px',
+                height: '28px',
+                borderRadius: '4px',
                 background: `${tabInfo.color}20`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '14px',
+                fontSize: '12px',
                 color: tabInfo.color
               }}>
                 {tabInfo.icon}
               </div>
               <div>
-                <Text strong style={{ fontSize: '14px', color: '#333' }}>
+                <Text strong style={{ fontSize: '13px', color: '#333333' }}>
                   {tabInfo.title}
                 </Text>
                 <br />
-                <Text type="secondary" style={{ fontSize: '11px' }}>
+                <Text type="secondary" style={{ fontSize: '10px' }}>
                   {tabInfo.description}
                 </Text>
               </div>
             </Space>
           </Col>
           <Col>
-            <Tag color={tabInfo.color} style={{ borderRadius: '4px', fontSize: '11px' }}>
+            <Tag color={tabInfo.color} style={{ borderRadius: '3px', fontSize: '10px' }}>
               {tabInfo.count} 项
             </Tag>
           </Col>
@@ -267,8 +267,8 @@ const ContentArea: React.FC<ContentAreaProps> = ({
 
       {/* 主要内容区域 - 移除卡片嵌套 */}
       <div style={{
-        background: '#fff',
-        borderRadius: '8px',
+        background: '#ffffff',
+        borderRadius: '6px',
         border: '1px solid #e8e8e8',
         minHeight: '300px'
       }}>
@@ -277,12 +277,12 @@ const ContentArea: React.FC<ContentAreaProps> = ({
 
       {/* 底部操作提示 - 简化样式 */}
       <div style={{
-        marginTop: '12px',
-        padding: '8px 12px',
-        background: '#f0f2f5',
-        borderRadius: '6px',
+        marginTop: '10px',
+        padding: '6px 10px',
+        background: '#f8f9fa',
+        borderRadius: '4px',
         fontSize: '11px',
-        color: '#666'
+        color: '#666666'
       }}>
         <Row align="middle" justify="space-between">
           <Col>

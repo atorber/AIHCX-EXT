@@ -408,232 +408,358 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
 
 
   return (
-    <div style={{ padding: '16px' }}>
-      <Card 
-        title={
-          <Space>
-            <DatabaseOutlined />
-            <span>数据转储配置</span>
-          </Space>
-        }
-        extra={
-          isRedirected && (
-            <Alert 
-              message="已跳转到创建任务页面，表单已锁定" 
-              type="info" 
-              showIcon 
-            />
-          )
-        }
+    <div style={{ 
+      padding: '14px',
+      background: '#ffffff',
+      borderRadius: '6px',
+      border: '1px solid #e8e8e8'
+    }}>
+      <div style={{ 
+        marginBottom: '16px',
+        paddingBottom: '12px',
+        borderBottom: '1px solid #f0f0f0'
+      }}>
+        <Space>
+          <DatabaseOutlined style={{ color: '#1890ff', fontSize: '16px' }} />
+          <span style={{ 
+            fontSize: '16px', 
+            color: '#333333',
+            fontWeight: 500
+          }}>
+            数据转储配置
+          </span>
+        </Space>
+        {isRedirected && (
+          <Alert 
+            message="已跳转到创建任务页面，表单已锁定" 
+            type="info" 
+            showIcon 
+            style={{ 
+              marginTop: '12px',
+              borderRadius: '4px'
+            }}
+          />
+        )}
+      </div>
+      
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={config}
+        disabled={isRedirected}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={config}
-          disabled={isRedirected}
+        {/* 数据集信息 */}
+        <Form.Item 
+          label={
+            <span style={{ 
+              fontSize: '12px', 
+              color: '#333333',
+              fontWeight: 500
+            }}>
+              数据集
+            </span>
+          }
         >
-          {/* 数据集信息 */}
-          <Form.Item label="数据集">
+          <Input
+            value={`${datasetInfo?.datasetName || datasetId} (${category})`}
+            disabled
+            prefix={<DatabaseOutlined />}
+            style={{
+              borderRadius: '4px'
+            }}
+          />
+        </Form.Item>
+
+        {datasetInfo?.datasetStoragePath && (
+          <Form.Item 
+            label={
+              <span style={{ 
+                fontSize: '12px', 
+                color: '#333333',
+                fontWeight: 500
+              }}>
+                原始存储路径
+              </span>
+            }
+          >
             <Input
-              value={`${datasetInfo?.datasetName || datasetId} (${category})`}
+              value={datasetInfo.datasetStoragePath}
               disabled
-              prefix={<DatabaseOutlined />}
-            />
-          </Form.Item>
-
-          {datasetInfo?.datasetStoragePath && (
-            <Form.Item label="原始存储路径">
-              <Input
-                value={datasetInfo.datasetStoragePath}
-                disabled
-                prefix={<CloudOutlined />}
-              />
-            </Form.Item>
-          )}
-
-          <Divider />
-
-          {/* 资源池类型 */}
-          <Form.Item 
-            label="资源池类型" 
-            name="resourcePoolType"
-            rules={[{ required: true, message: '请选择资源池类型' }]}
-          >
-            <Select
-              placeholder="请选择资源池类型"
-              onChange={handleResourcePoolTypeChange}
-              suffixIcon={<SettingOutlined />}
-            >
-              <Option value="自运维">自运维资源池</Option>
-              <Option value="全托管">全托管资源池</Option>
-            </Select>
-          </Form.Item>
-
-          {/* 资源池 */}
-          <Form.Item 
-            label="资源池" 
-            name="resourcePoolId"
-            rules={[{ required: true, message: '请选择资源池' }]}
-          >
-            <Select
-              placeholder="请选择资源池"
-              onChange={handleResourcePoolChange}
-              loading={isLoadingResourcePools}
-              notFoundContent={isLoadingResourcePools ? <Spin size="small" /> : '暂无数据'}
-            >
-              {resourcePools.map((pool: ResourcePool) => (
-                <Option key={pool.resourcePoolId} value={pool.resourcePoolId}>
-                  {pool.name} ({pool.phase})
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          {/* 队列 */}
-          <Form.Item 
-            label="队列" 
-            name="queueId"
-            rules={[{ required: true, message: '请选择队列' }]}
-          >
-            <Select
-              placeholder="请选择队列"
-              onChange={handleQueueChange}
-              loading={isLoadingQueues}
-              notFoundContent={isLoadingQueues ? <Spin size="small" /> : '暂无数据'}
-            >
-              {queues.map((queue: Queue) => (
-                <Option key={queue.queueId} value={queue.queueId}>
-                  {queue.queueName} ({queue.phase})
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          {/* PFS实例 */}
-          <Form.Item 
-            label="PFS实例" 
-            name="pfsId"
-            rules={[{ required: true, message: '请选择PFS实例' }]}
-          >
-            <Select
-              placeholder="请选择PFS实例"
-              onChange={handlePfsChange}
-              loading={isLoadingPfsInstances}
-              notFoundContent={isLoadingPfsInstances ? <Spin size="small" /> : '暂无数据'}
-            >
-              {pfsInstances.map(instance => (
-                <Option key={instance.id} value={instance.id}>
-                  {instance.name} ({instance.status})
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          {pfsInstances.length > 0 && (
-            <Form.Item>
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                找到 {pfsInstances.length} 个可用PFS实例
-              </Text>
-            </Form.Item>
-          )}
-
-          {/* 存储路径 */}
-          <Form.Item 
-            label="存储路径" 
-            name="storagePath"
-            rules={[{ required: true, message: '请输入存储路径' }]}
-            extra="数据转储的目标存储路径 (已自动从数据集存储路径中去除bos:前缀)"
-          >
-            <Input
-              placeholder="请输入存储路径"
-              onChange={handleStoragePathChange}
               prefix={<CloudOutlined />}
+              style={{
+                borderRadius: '4px'
+              }}
             />
           </Form.Item>
+        )}
 
-          {/* 错误提示 */}
-          {error && (
-            <Alert
-              message="操作失败"
-              description="请查看控制台获取详细错误信息"
-              type="error"
-              showIcon
-              closable
-              onClose={() => setError('')}
-            />
-          )}
+        <div style={{ 
+          height: '1px', 
+          background: '#f0f0f0', 
+          margin: '16px 0' 
+        }} />
 
-          {/* 任务结果提示 */}
-          {showTaskResult && taskResult && (
-            <Alert
-              message={taskResult.success ? '任务创建成功' : '任务创建失败'}
-              description={
-                taskResult.success ? (
-                  <div>
-                    <div>任务ID: <Text code>{taskResult.result?.jobId}</Text></div>
-                    <Button 
-                      type="link" 
-                      size="small"
-                      onClick={() => {
-                        console.log('跳转到任务详情页面:', taskResult.result?.jobId);
-                      }}
-                    >
-                      查看任务详情
-                    </Button>
-                  </div>
-                ) : (
-                  '请查看控制台获取详细错误信息'
-                )
-              }
-              type={taskResult.success ? 'success' : 'error'}
-              showIcon
-              closable
-              onClose={() => setShowTaskResult(false)}
-            />
-          )}
+        {/* 资源池类型 */}
+        <Form.Item 
+          label={
+            <span style={{ 
+              fontSize: '12px', 
+              color: '#333333',
+              fontWeight: 500
+            }}>
+              资源池类型
+            </span>
+          }
+          name="resourcePoolType"
+          rules={[{ required: true, message: '请选择资源池类型' }]}
+        >
+          <Select
+            placeholder="请选择资源池类型"
+            onChange={handleResourcePoolTypeChange}
+            suffixIcon={<SettingOutlined />}
+            style={{
+              borderRadius: '4px'
+            }}
+          >
+            <Option value="自运维">自运维资源池</Option>
+            <Option value="全托管">全托管资源池</Option>
+          </Select>
+        </Form.Item>
 
-          {/* 提交按钮 */}
+        {/* 资源池 */}
+        <Form.Item 
+          label={
+            <span style={{ 
+              fontSize: '12px', 
+              color: '#333333',
+              fontWeight: 500
+            }}>
+              资源池
+            </span>
+          }
+          name="resourcePoolId"
+          rules={[{ required: true, message: '请选择资源池' }]}
+        >
+          <Select
+            placeholder="请选择资源池"
+            onChange={handleResourcePoolChange}
+            loading={isLoadingResourcePools}
+            notFoundContent={isLoadingResourcePools ? <Spin size="small" /> : '暂无数据'}
+            style={{
+              borderRadius: '4px'
+            }}
+          >
+            {resourcePools.map((pool: ResourcePool) => (
+              <Option key={pool.resourcePoolId} value={pool.resourcePoolId}>
+                {pool.name} ({pool.phase})
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        {/* 队列 */}
+        <Form.Item 
+          label={
+            <span style={{ 
+              fontSize: '12px', 
+              color: '#333333',
+              fontWeight: 500
+            }}>
+              队列
+            </span>
+          }
+          name="queueId"
+          rules={[{ required: true, message: '请选择队列' }]}
+        >
+          <Select
+            placeholder="请选择队列"
+            onChange={handleQueueChange}
+            loading={isLoadingQueues}
+            notFoundContent={isLoadingQueues ? <Spin size="small" /> : '暂无数据'}
+            style={{
+              borderRadius: '4px'
+            }}
+          >
+            {queues.map((queue: Queue) => (
+              <Option key={queue.queueId} value={queue.queueId}>
+                {queue.queueName} ({queue.phase})
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        {/* PFS实例 */}
+        <Form.Item 
+          label={
+            <span style={{ 
+              fontSize: '12px', 
+              color: '#333333',
+              fontWeight: 500
+            }}>
+              PFS实例
+            </span>
+          }
+          name="pfsId"
+          rules={[{ required: true, message: '请选择PFS实例' }]}
+        >
+          <Select
+            placeholder="请选择PFS实例"
+            onChange={handlePfsChange}
+            loading={isLoadingPfsInstances}
+            notFoundContent={isLoadingPfsInstances ? <Spin size="small" /> : '暂无数据'}
+            style={{
+              borderRadius: '4px'
+            }}
+          >
+            {pfsInstances.map(instance => (
+              <Option key={instance.id} value={instance.id}>
+                {instance.name} ({instance.status})
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        {pfsInstances.length > 0 && (
           <Form.Item>
-            <Space>
-              <Button
-                type="primary"
-                htmlType="submit"
-                onClick={handleSubmit}
-                loading={isSubmitting}
-                icon={<SendOutlined />}
-                disabled={isRedirected}
-              >
-                提交转储任务
-              </Button>
-              
-              <Button
-                onClick={() => {
-                  form.resetFields();
-                  setConfig({
-                    datasetId,
-                    datasetName: '',
-                    resourcePoolType: '自运维',
-                    resourcePoolId: '',
-                    queueId: '',
-                    pfsId: '',
-                    storagePath: '',
-                    originalStoragePath: ''
-                  });
-                  setResourcePools([]);
-                  setQueues([]);
-                  setPfsInstances([]);
-                  setError('');
-                  setShowTaskResult(false);
-                }}
-                icon={<ReloadOutlined />}
-                disabled={isRedirected}
-              >
-                重置
-              </Button>
-            </Space>
+            <Text type="secondary" style={{ fontSize: '11px' }}>
+              找到 {pfsInstances.length} 个可用PFS实例
+            </Text>
           </Form.Item>
-        </Form>
-      </Card>
+        )}
+
+        {/* 存储路径 */}
+        <Form.Item 
+          label={
+            <span style={{ 
+              fontSize: '12px', 
+              color: '#333333',
+              fontWeight: 500
+            }}>
+              存储路径
+            </span>
+          }
+          name="storagePath"
+          rules={[{ required: true, message: '请输入存储路径' }]}
+          extra={
+            <span style={{ 
+              fontSize: '11px', 
+              color: '#666666' 
+            }}>
+              数据转储的目标存储路径 (已自动从数据集存储路径中去除bos:前缀)
+            </span>
+          }
+        >
+          <Input
+            placeholder="请输入存储路径"
+            onChange={handleStoragePathChange}
+            prefix={<CloudOutlined />}
+            style={{
+              borderRadius: '4px'
+            }}
+          />
+        </Form.Item>
+
+        {/* 错误提示 */}
+        {error && (
+          <Alert
+            message="操作失败"
+            description="请查看控制台获取详细错误信息"
+            type="error"
+            showIcon
+            closable
+            onClose={() => setError('')}
+            style={{ 
+              borderRadius: '4px',
+              marginBottom: '16px'
+            }}
+          />
+        )}
+
+        {/* 任务结果提示 */}
+        {showTaskResult && taskResult && (
+          <Alert
+            message={taskResult.success ? '任务创建成功' : '任务创建失败'}
+            description={
+              taskResult.success ? (
+                <div>
+                  <div>任务ID: <Text code>{taskResult.result?.jobId}</Text></div>
+                  <Button 
+                    type="link" 
+                    size="small"
+                    onClick={() => {
+                      console.log('跳转到任务详情页面:', taskResult.result?.jobId);
+                    }}
+                  >
+                    查看任务详情
+                  </Button>
+                </div>
+              ) : (
+                '请查看控制台获取详细错误信息'
+              )
+            }
+            type={taskResult.success ? 'success' : 'error'}
+            showIcon
+            closable
+            onClose={() => setShowTaskResult(false)}
+            style={{ 
+              borderRadius: '4px',
+              marginBottom: '16px'
+            }}
+          />
+        )}
+
+        {/* 提交按钮 */}
+        <Form.Item style={{ marginBottom: 0 }}>
+          <div style={{ 
+            display: 'flex', 
+            gap: '12px',
+            justifyContent: 'flex-end'
+          }}>
+            <Button
+              onClick={() => {
+                form.resetFields();
+                setConfig({
+                  datasetId,
+                  datasetName: '',
+                  resourcePoolType: '自运维',
+                  resourcePoolId: '',
+                  queueId: '',
+                  pfsId: '',
+                  storagePath: '',
+                  originalStoragePath: ''
+                });
+                setResourcePools([]);
+                setQueues([]);
+                setPfsInstances([]);
+                setError('');
+                setShowTaskResult(false);
+              }}
+              icon={<ReloadOutlined />}
+              disabled={isRedirected}
+              style={{
+                borderRadius: '4px',
+                padding: '6px 16px'
+              }}
+            >
+              重置
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              onClick={handleSubmit}
+              loading={isSubmitting}
+              icon={<SendOutlined />}
+              disabled={isRedirected}
+              style={{
+                borderRadius: '4px',
+                padding: '6px 16px'
+              }}
+            >
+              提交转储任务
+            </Button>
+          </div>
+        </Form.Item>
+      </Form>
     </div>
   );
 };

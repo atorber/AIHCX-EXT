@@ -85,35 +85,36 @@ const UnsupportedPage: React.FC<UnsupportedPageProps> = ({ currentUrl }) => {
     }}>
       {/* 主要提示区域 - 简化布局 */}
       <div style={{
-        background: '#fff',
-        borderRadius: '8px',
-        padding: '20px',
-        marginBottom: '12px',
+        background: '#ffffff',
+        borderRadius: '6px',
+        padding: '16px',
+        marginBottom: '10px',
         border: '1px solid #e8e8e8',
         textAlign: 'center'
       }}>
         <div style={{
-          width: '60px',
-          height: '60px',
+          width: '48px',
+          height: '48px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          background: '#1890ff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          margin: '0 auto 16px',
-          fontSize: '24px',
+          margin: '0 auto 12px',
+          fontSize: '20px',
           color: 'white'
         }}>
           {alertInfo.icon}
         </div>
         <Title level={3} style={{ 
-          margin: '0 0 8px 0', 
-          color: '#333',
-          fontSize: '16px'
+          margin: '0 0 6px 0', 
+          color: '#333333',
+          fontSize: '14px',
+          fontWeight: 500
         }}>
           {alertInfo.message}
         </Title>
-        <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '20px' }}>
+        <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginBottom: '16px' }}>
           {alertInfo.description}
         </Text>
         
@@ -124,12 +125,12 @@ const UnsupportedPage: React.FC<UnsupportedPageProps> = ({ currentUrl }) => {
           target="_blank"
           rel="noopener noreferrer"
           style={{
-            borderRadius: '6px',
-            height: '36px',
-            fontSize: '14px',
+            borderRadius: '4px',
+            height: '32px',
+            fontSize: '12px',
             fontWeight: 500,
-            padding: '0 24px',
-            background: 'linear-gradient(135deg, #667eea, #764ba2)',
+            padding: '0 16px',
+            background: '#1890ff',
             border: 'none'
           }}
         >
@@ -139,48 +140,48 @@ const UnsupportedPage: React.FC<UnsupportedPageProps> = ({ currentUrl }) => {
 
       {/* 支持的功能页面 - 简化布局 */}
       <div style={{
-        background: '#fff',
-        borderRadius: '8px',
-        padding: '16px',
+        background: '#ffffff',
+        borderRadius: '6px',
+        padding: '14px',
         border: '1px solid #e8e8e8'
       }}>
-        <Space style={{ marginBottom: '16px' }}>
-          <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '16px' }} />
-          <Text strong style={{ fontSize: '14px' }}>支持的功能页面</Text>
+        <Space style={{ marginBottom: '14px' }}>
+          <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '14px' }} />
+          <Text strong style={{ fontSize: '13px', color: '#333333' }}>支持的功能页面</Text>
         </Space>
         
-        <Row gutter={[8, 8]}>
+        <Row gutter={[6, 6]}>
           {supportedPages.map((item, index) => (
             <Col span={12} key={index}>
               <div style={{ 
-                padding: '12px',
-                borderRadius: '6px',
+                padding: '10px',
+                borderRadius: '4px',
                 border: `1px solid ${item.color}30`,
                 background: `${item.color}08`,
                 height: '100%'
               }}>
                 <Space align="center" style={{ width: '100%' }}>
                   <div style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '4px',
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '3px',
                     background: `${item.color}20`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: item.color,
-                    fontSize: '12px'
+                    fontSize: '10px'
                   }}>
                     {item.icon}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <Text strong style={{ fontSize: '12px', color: '#333' }}>
+                    <Text strong style={{ fontSize: '11px', color: '#333333' }}>
                       {item.name}
                     </Text>
                     {item.hint && (
                       <div>
-                        <Text type="secondary" style={{ fontSize: '10px', lineHeight: 1.3 }}>
-                          <InfoCircleOutlined style={{ marginRight: '2px', fontSize: '10px' }} />
+                        <Text type="secondary" style={{ fontSize: '9px', lineHeight: 1.3 }}>
+                          <InfoCircleOutlined style={{ marginRight: '2px', fontSize: '9px' }} />
                           {item.hint}
                         </Text>
                       </div>
@@ -195,24 +196,24 @@ const UnsupportedPage: React.FC<UnsupportedPageProps> = ({ currentUrl }) => {
         {/* 当前页面信息 */}
         {currentUrl && (
           <div style={{
-            marginTop: '16px',
-            padding: '12px',
-            background: '#f5f5f5',
-            borderRadius: '6px',
+            marginTop: '14px',
+            padding: '10px',
+            background: '#f8f9fa',
+            borderRadius: '4px',
             border: '1px solid #e8e8e8'
           }}>
-            <Text type="secondary" style={{ fontSize: '11px', fontWeight: 500, display: 'block', marginBottom: '6px' }}>
-              <InfoCircleOutlined style={{ marginRight: '4px', fontSize: '11px' }} />
+            <Text type="secondary" style={{ fontSize: '10px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>
+              <InfoCircleOutlined style={{ marginRight: '4px', fontSize: '10px' }} />
               当前页面：
             </Text>
             <Text 
               code 
               style={{ 
-                fontSize: '10px',
+                fontSize: '9px',
                 wordBreak: 'break-all',
-                background: '#fff',
-                padding: '6px 8px',
-                borderRadius: '4px',
+                background: '#ffffff',
+                padding: '4px 6px',
+                borderRadius: '3px',
                 display: 'block',
                 border: '1px solid #d9d9d9'
               }}

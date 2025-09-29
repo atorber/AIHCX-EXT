@@ -96,28 +96,25 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
 
   return (
     <div style={{ 
-      background: '#fff', 
+      background: '#ffffff', 
       borderBottom: '1px solid #f0f0f0',
-      padding: '0 20px',
-      position: 'relative',
-      overflow: 'hidden'
+      padding: '0 16px'
     }}>
-      {/* 背景装饰线 */}
+      {/* 简化底部装饰线 */}
       <div style={{
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        height: '2px',
-        background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-        opacity: 0.3
+        height: '1px',
+        background: '#f0f0f0'
       }} />
       
       <Tabs
         activeKey={activeTab}
         onChange={(key) => onTabChange(key as TabType)}
         size="small"
-        type="card"
+        type="line"
         style={{
           margin: 0,
           paddingTop: '8px'
@@ -136,8 +133,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: '6px',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
+                  padding: '6px 12px',
                   transition: 'all 0.2s ease',
                   minWidth: '80px',
                   justifyContent: 'center'
@@ -151,9 +147,9 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
                     {tab.icon}
                   </div>
                   <span style={{ 
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    color: '#333'
+                    fontSize: '12px',
+                    fontWeight: 400,
+                    color: '#666666'
                   }}>
                     {tab.label}
                   </span>
@@ -167,8 +163,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
                         minWidth: '16px',
                         height: '16px',
                         lineHeight: '16px',
-                        fontWeight: 'bold',
-                        boxShadow: `0 2px 4px ${tab.color}30`
+                        fontWeight: 'normal'
                       }} 
                     />
                   )}
@@ -179,19 +174,11 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
         ))}
       </Tabs>
       
-      {/* 底部状态指示器 */}
+      {/* 简化底部状态指示器 */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '8px 0',
-        fontSize: '11px',
-        color: '#666',
-        borderTop: '1px solid #f5f5f5'
-      }}>
-        <span>共 {visibleTabs.length} 个功能模块</span>
-        <span>当前: {visibleTabs.find(t => t.key === activeTab)?.label || '未知'}</span>
-      </div>
+        display: 'none'
+      }} />
+    </div>
     </div>
   );
 };
