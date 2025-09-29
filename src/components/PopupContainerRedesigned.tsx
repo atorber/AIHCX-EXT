@@ -736,11 +736,11 @@ echo "数据转储任务完成: $(date)"`,
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: '#667eea',
-          borderRadius: 8,
+          colorPrimary: '#1890ff',
+          borderRadius: 4,
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-          fontSize: 14,
-          lineHeight: 1.5,
+          fontSize: 12,
+          lineHeight: 1.4,
         },
         components: {
           Layout: {
@@ -749,23 +749,32 @@ echo "数据转储任务完成: $(date)"`,
             siderBg: 'transparent',
           },
           Card: {
-            borderRadius: 12,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            borderRadius: 4,
+            boxShadow: 'none',
+            paddingLG: 8,
           },
           Button: {
-            borderRadius: 8,
+            borderRadius: 4,
             fontWeight: 500,
+            fontSize: 10,
+            paddingInline: 8,
+            paddingBlock: 2,
           },
           Tabs: {
-            cardPadding: '8px 16px',
-            cardGutter: 8,
+            cardPadding: '4px 8px',
+            cardGutter: 2,
+            fontSize: 10,
+          },
+          Typography: {
+            fontSize: 12,
+            lineHeight: 1.4,
           },
         },
       }}
     >
       <Layout style={{ 
         minHeight: '100vh', 
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        background: '#ffffff',
         overflow: 'hidden'
       }}>
         <HeaderRedesigned pageName={pageInfo.pageName} />
@@ -773,7 +782,8 @@ echo "数据转储任务完成: $(date)"`,
         <Content style={{ 
           padding: 0,
           overflow: 'auto',
-          maxHeight: 'calc(100vh - 70px)'
+          maxHeight: 'calc(100vh - 60px)',
+          background: '#ffffff'
         }}>
           {renderContent()}
         </Content>
@@ -790,16 +800,16 @@ echo "数据转储任务完成: $(date)"`,
         {/* 回到顶部按钮 */}
         <BackTop 
           style={{
-            right: 20,
-            bottom: 20,
-            background: 'linear-gradient(135deg, #667eea, #764ba2)',
+            right: 16,
+            bottom: 16,
+            background: '#1890ff',
             borderRadius: '50%',
-            width: '48px',
-            height: '48px',
+            width: '40px',
+            height: '40px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
+            boxShadow: '0 4px 12px rgba(24, 144, 255, 0.3)',
             transition: 'all 0.3s ease'
           }}
         />

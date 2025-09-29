@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tabs, Badge, Tooltip } from 'antd';
+import { Tabs, Badge } from 'antd';
 import { 
   ThunderboltOutlined, 
   RocketOutlined, 
@@ -33,57 +33,51 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
   const tabs = [
     { 
       key: 'cli' as TabType, 
-      label: 'CLI命令', 
+      label: 'CLI', 
       icon: <ThunderboltOutlined />,
       condition: taskParams.cliItems.length > 0,
       count: taskParams.cliItems.length,
-      color: '#52c41a',
-      description: '命令行工具'
+      color: '#52c41a'
     },
     { 
       key: 'commandScript' as TabType, 
-      label: '启动命令', 
+      label: '启动', 
       icon: <RocketOutlined />,
       condition: !!taskParams.commandScript,
       count: taskParams.commandScript ? 1 : 0,
-      color: '#1890ff',
-      description: '任务启动脚本'
+      color: '#1890ff'
     },
     { 
       key: 'json' as TabType, 
-      label: 'JSON参数', 
+      label: 'JSON', 
       icon: <FileTextOutlined />,
       condition: taskParams.jsonItems.length > 0,
       count: taskParams.jsonItems.length,
-      color: '#faad14',
-      description: 'JSON格式配置'
+      color: '#faad14'
     },
     { 
       key: 'yaml' as TabType, 
-      label: 'YAML参数', 
+      label: 'YAML', 
       icon: <UnorderedListOutlined />,
       condition: taskParams.yamlItems.length > 0,
       count: taskParams.yamlItems.length,
-      color: '#722ed1',
-      description: 'YAML格式配置'
+      color: '#722ed1'
     },
     { 
       key: 'apiDocs' as TabType, 
-      label: 'API文档', 
+      label: 'API', 
       icon: <BookOutlined />,
       condition: taskParams.apiDocs.length > 0,
       count: taskParams.apiDocs.length,
-      color: '#13c2c2',
-      description: '接口文档'
+      color: '#13c2c2'
     },
     { 
       key: 'chat' as TabType, 
-      label: 'AI聊天', 
+      label: '聊天', 
       icon: <MessageOutlined />,
       condition: pageName === '在线服务部署详情' && !!taskParams.chatConfig,
       count: taskParams.chatConfig ? 1 : 0,
-      color: '#eb2f96',
-      description: '智能对话'
+      color: '#eb2f96'
     }
   ];
 
@@ -98,100 +92,66 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
     <div style={{ 
       background: '#fff', 
       borderBottom: '1px solid #f0f0f0',
-      padding: '0 20px',
-      position: 'relative',
-      overflow: 'hidden'
+      padding: '0 6px'
     }}>
-      {/* 背景装饰线 */}
-      <div style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '2px',
-        background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-        opacity: 0.3
-      }} />
-      
       <Tabs
         activeKey={activeTab}
         onChange={(key) => onTabChange(key as TabType)}
         size="small"
         type="card"
         style={{
-          margin: 0,
-          paddingTop: '8px'
+          margin: 0
         }}
         tabBarStyle={{
           margin: 0,
-          borderBottom: 'none'
+          borderBottom: 'none',
+          padding: '4px 0'
         }}
       >
         {visibleTabs.map(tab => (
           <TabPane
             key={tab.key}
             tab={
-              <Tooltip title={tab.description} placement="bottom">
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '3px',
+                padding: '1px 4px',
+                borderRadius: '3px',
+                minWidth: '50px',
+                justifyContent: 'center'
+              }}>
                 <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '6px',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  transition: 'all 0.2s ease',
-                  minWidth: '80px',
-                  justifyContent: 'center'
+                  color: tab.color,
+                  fontSize: '11px'
                 }}>
-                  <div style={{ 
-                    color: tab.color,
-                    fontSize: '14px',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    {tab.icon}
-                  </div>
-                  <span style={{ 
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    color: '#333'
-                  }}>
-                    {tab.label}
-                  </span>
-                  {tab.count > 0 && (
-                    <Badge 
-                      count={tab.count} 
-                      size="small" 
-                      style={{ 
-                        backgroundColor: tab.color,
-                        fontSize: '10px',
-                        minWidth: '16px',
-                        height: '16px',
-                        lineHeight: '16px',
-                        fontWeight: 'bold',
-                        boxShadow: `0 2px 4px ${tab.color}30`
-                      }} 
-                    />
-                  )}
+                  {tab.icon}
                 </div>
-              </Tooltip>
+                <span style={{ 
+                  fontSize: '10px',
+                  fontWeight: 500,
+                  color: '#333'
+                }}>
+                  {tab.label}
+                </span>
+                {tab.count > 0 && (
+                  <Badge 
+                    count={tab.count} 
+                    size="small" 
+                    style={{ 
+                      backgroundColor: tab.color,
+                      fontSize: '8px',
+                      minWidth: '12px',
+                      height: '12px',
+                      lineHeight: '12px'
+                    }} 
+                  />
+                )}
+              </div>
             }
           />
         ))}
       </Tabs>
-      
-      {/* 底部状态指示器 */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '8px 0',
-        fontSize: '11px',
-        color: '#666',
-        borderTop: '1px solid #f5f5f5'
-      }}>
-        <span>共 {visibleTabs.length} 个功能模块</span>
-        <span>当前: {visibleTabs.find(t => t.key === activeTab)?.label || '未知'}</span>
-      </div>
     </div>
   );
 };

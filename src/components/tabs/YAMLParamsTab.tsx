@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+import { Button, Typography, Space, Card } from 'antd';
+import { CopyOutlined, DownloadOutlined } from '@ant-design/icons';
+
+const { Text } = Typography;
 
 interface YAMLItem {
   title: string;
@@ -36,30 +40,75 @@ const YAMLParamsTab: React.FC<YAMLParamsTabProps> = ({
   };
 
   if (items.length === 0) {
-    return <div>没有可用的YAML参数</div>;
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <Text type="secondary">没有可用的YAML参数</Text>
+      </div>
+    );
   }
 
   return (
-    <div className="result-container">
-      {items.map((item, index) => (
-        <div key={index} className="result-item">
-          <h3>
-            {item.title}
-            <span className="action-buttons">
-              <button
-                className={copyingItems.has(item.title) ? 'copying' : ''}
-                onClick={() => handleCopy(item.text, item.title)}
-              >
-                {copyingItems.has(item.title) ? '已复制' : '一键复制'}
-              </button>
-              <button onClick={() => handleSave(item.text)}>
-                保存为文件
-              </button>
-            </span>
-          </h3>
-          <pre>{item.text}</pre>
-        </div>
-      ))}
+    <div style={{ padding: '8px' }}>
+      {items.map((item, index) => {
+        const isCopying = copyingItems.has(item.title);
+        
+        return (
+          <Card 
+            key={index} 
+            size="small" 
+            style={{ 
+              marginBottom: '8px',
+              border: '1px solid #f0f0f0'
+            }}
+            bodyStyle={{ padding: '8px' }}
+          >
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: '6px'
+            }}>
+              <Text strong style={{ fontSize: '12px' }}>
+                {item.title}
+              </Text>
+              <Space size="small">
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={<CopyOutlined />}
+                  loading={isCopying}
+                  onClick={() => handleCopy(item.text, item.title)}
+                  style={{ fontSize: '10px', height: '20px', padding: '0 8px' }}
+                >
+                  {isCopying ? '已复制' : '复制'}
+                </Button>
+                <Button
+                  size="small"
+                  icon={<DownloadOutlined />}
+                  onClick={() => handleSave(item.text)}
+                  style={{ fontSize: '10px', height: '20px', padding: '0 8px' }}
+                >
+                  保存
+                </Button>
+              </Space>
+            </div>
+            <div style={{
+              background: '#fafafa',
+              padding: '6px',
+              borderRadius: '3px',
+              fontSize: '10px',
+              fontFamily: 'monospace',
+              wordBreak: 'break-all',
+              whiteSpace: 'pre-wrap',
+              border: '1px solid #f0f0f0',
+              maxHeight: '200px',
+              overflow: 'auto'
+            }}>
+              {item.text}
+            </div>
+          </Card>
+        );
+      })}
     </div>
   );
 };

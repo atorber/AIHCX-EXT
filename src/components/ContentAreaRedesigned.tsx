@@ -100,42 +100,42 @@ const ContentArea: React.FC<ContentAreaProps> = ({
     const tabInfoMap = {
       cli: { 
         icon: <FileTextOutlined />, 
-        title: 'CLI命令', 
+        title: 'CLI', 
         description: '命令行工具和脚本',
         color: '#52c41a',
         count: taskParams.cliItems.length
       },
       commandScript: { 
         icon: <RocketOutlined />, 
-        title: '启动命令', 
+        title: '启动', 
         description: '任务启动脚本',
         color: '#1890ff',
         count: taskParams.commandScript ? 1 : 0
       },
       json: { 
         icon: <FileTextOutlined />, 
-        title: 'JSON参数', 
+        title: 'JSON', 
         description: 'JSON格式配置',
         color: '#faad14',
         count: taskParams.jsonItems.length
       },
       yaml: { 
         icon: <FileTextOutlined />, 
-        title: 'YAML参数', 
+        title: 'YAML', 
         description: 'YAML格式配置',
         color: '#722ed1',
         count: taskParams.yamlItems.length
       },
       apiDocs: { 
         icon: <FileTextOutlined />, 
-        title: 'API文档', 
+        title: 'API', 
         description: '接口文档',
         color: '#13c2c2',
         count: taskParams.apiDocs.length
       },
       chat: { 
         icon: <DatabaseOutlined />, 
-        title: 'AI聊天', 
+        title: '聊天', 
         description: '智能对话',
         color: '#eb2f96',
         count: taskParams.chatConfig ? 1 : 0
@@ -218,47 +218,47 @@ const ContentArea: React.FC<ContentAreaProps> = ({
 
   return (
     <div style={{ 
-      padding: '12px',
-      background: '#f8f9fa',
+      padding: '8px',
+      background: '#ffffff',
       minHeight: '400px'
     }}>
       {/* 页面头部信息 - 简化布局 */}
       <div style={{
-        background: '#fff',
-        borderRadius: '8px',
-        padding: '12px 16px',
-        marginBottom: '12px',
-        border: '1px solid #e8e8e8'
+        background: '#fafafa',
+        borderRadius: '6px',
+        padding: '8px 12px',
+        marginBottom: '8px',
+        border: '1px solid #f0f0f0'
       }}>
         <Row align="middle" justify="space-between">
           <Col>
-            <Space align="center">
+            <Space align="center" size={6}>
               <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '6px',
-                background: `${tabInfo.color}20`,
+                width: '24px',
+                height: '24px',
+                borderRadius: '4px',
+                background: `${tabInfo.color}15`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '14px',
+                fontSize: '12px',
                 color: tabInfo.color
               }}>
                 {tabInfo.icon}
               </div>
               <div>
-                <Text strong style={{ fontSize: '14px', color: '#333' }}>
+                <Text strong style={{ fontSize: '13px', color: '#333' }}>
                   {tabInfo.title}
                 </Text>
                 <br />
-                <Text type="secondary" style={{ fontSize: '11px' }}>
+                <Text type="secondary" style={{ fontSize: '10px' }}>
                   {tabInfo.description}
                 </Text>
               </div>
             </Space>
           </Col>
           <Col>
-            <Tag color={tabInfo.color} style={{ borderRadius: '4px', fontSize: '11px' }}>
+            <Tag color={tabInfo.color} style={{ borderRadius: '3px', fontSize: '10px', padding: '1px 6px' }}>
               {tabInfo.count} 项
             </Tag>
           </Col>
@@ -267,9 +267,9 @@ const ContentArea: React.FC<ContentAreaProps> = ({
 
       {/* 主要内容区域 - 移除卡片嵌套 */}
       <div style={{
-        background: '#fff',
-        borderRadius: '8px',
-        border: '1px solid #e8e8e8',
+        background: '#ffffff',
+        borderRadius: '6px',
+        border: '1px solid #f0f0f0',
         minHeight: '300px'
       }}>
         {renderTabContent()}
@@ -277,26 +277,27 @@ const ContentArea: React.FC<ContentAreaProps> = ({
 
       {/* 底部操作提示 - 简化样式 */}
       <div style={{
-        marginTop: '12px',
-        padding: '8px 12px',
-        background: '#f0f2f5',
-        borderRadius: '6px',
-        fontSize: '11px',
-        color: '#666'
+        marginTop: '8px',
+        padding: '6px 10px',
+        background: '#fafafa',
+        borderRadius: '4px',
+        fontSize: '10px',
+        color: '#666',
+        border: '1px solid #f0f0f0'
       }}>
         <Row align="middle" justify="space-between">
           <Col>
             <Space size="small">
-              <CopyOutlined style={{ color: '#1890ff', fontSize: '11px' }} />
-              <Text type="secondary" style={{ fontSize: '11px' }}>
+              <CopyOutlined style={{ color: '#1890ff', fontSize: '10px' }} />
+              <Text type="secondary" style={{ fontSize: '10px' }}>
                 点击复制按钮快速复制
               </Text>
             </Space>
           </Col>
           <Col>
             <Space size="small">
-              <DownloadOutlined style={{ color: '#52c41a', fontSize: '11px' }} />
-              <Text type="secondary" style={{ fontSize: '11px' }}>
+              <DownloadOutlined style={{ color: '#52c41a', fontSize: '10px' }} />
+              <Text type="secondary" style={{ fontSize: '10px' }}>
                 支持导出文件
               </Text>
             </Space>
