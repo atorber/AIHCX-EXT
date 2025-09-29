@@ -408,7 +408,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
   };
 
   // 处理存储路径变化
-  const handleStoragePathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleStoragePathChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const updatedConfig = { ...config, storagePath: e.target.value };
     setConfig(updatedConfig);
   };
@@ -694,11 +694,11 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
           label={<span style={{ fontSize: '11px', color: '#666' }}>存储路径 <span style={{ color: '#ff4d4f' }}>*</span></span>}
           extra={<span style={{ fontSize: '10px', color: '#999' }}>数据转储的目标存储路径 (已自动从数据集存储路径中去除bos:前缀)</span>}
         >
-          <Input
-            placeholder="请输入存储路径"
+          <Input.TextArea
+            placeholder="请输入存储路径&#10;支持多行输入，每行一个路径"
             onChange={handleStoragePathChange}
-            prefix={<CloudOutlined />}
-            style={{ fontSize: '11px' }}
+            rows={3}
+            style={{ fontSize: '11px', resize: 'vertical' }}
           />
         </Form.Item>
 
