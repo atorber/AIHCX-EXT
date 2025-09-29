@@ -33,7 +33,7 @@ export class TaskListHandler extends BaseHandler {
       cliItems: [
         {
           title: '获取任务列表',
-          text: `aihc job list -p ${params.clusterUuid}`,
+          text: `aihc job list -p ${params.clusters}`,
           doc: 'https://cloud.baidu.com/doc/AIHC/s/Tm7x702fo#%E8%8E%B7%E5%8F%96%E4%BB%BB%E5%8A%A1%E5%88%97%E8%A1%A8'
         }
       ],
@@ -41,7 +41,7 @@ export class TaskListHandler extends BaseHandler {
         {
           title: '获取任务列表',
           text: 'https://cloud.baidu.com/doc/AIHC/s/xmayvctia',
-          requestExample: this.generateRequestExample('POST', 'DescribeJobs', { resourcePoolId: params.clusterUuid })
+          requestExample: this.generateRequestExample('POST', 'DescribeJobs', { resourcePoolId: params.clusters })
         }
       ]
     };
