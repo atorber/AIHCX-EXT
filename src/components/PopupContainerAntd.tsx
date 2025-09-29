@@ -37,22 +37,7 @@ const PopupContainer: React.FC<PopupContainerProps> = () => {
     window.addEventListener('error', handleError);
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
     
-    // 添加一个立即可见的调试标记
-    if (typeof document !== 'undefined') {
-      const debugDiv = document.createElement('div');
-      debugDiv.style.cssText = 'position:fixed;top:0;left:0;background:purple;color:white;padding:5px;z-index:99999;';
-      debugDiv.textContent = `PopupContainer加载: ${new Date().toLocaleTimeString()}`;
-      document.body.appendChild(debugDiv);
-      setTimeout(() => {
-        if (document.body.contains(debugDiv)) {
-          document.body.removeChild(debugDiv);
-        }
-      }, 3000);
-    }
-    
     console.debug('[PopupContainer] 组件已初始化');
-    console.warn('[PopupContainer] ⚠️ 组件已初始化 - WARN');
-    console.error('[PopupContainer] ❌ 组件已初始化 - ERROR（用于调试）');
     
     return () => {
       window.removeEventListener('error', handleError);

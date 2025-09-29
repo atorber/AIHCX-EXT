@@ -98,12 +98,6 @@ export const createDataDumpTask = async (config: DataDumpTaskConfig): Promise<Ta
       'Content-Type': 'application/json',
       'X-API-Version': 'v2'
     });
-    console.log('🔍 PFS实例ID调试:', {
-      pfsInstanceId: config.pfsInstanceId,
-      type: typeof config.pfsInstanceId,
-      length: config.pfsInstanceId?.length
-    });
-
     // 根据资源池类型处理API调用参数
     const isFullyManaged = config.resourcePoolType === '全托管';
     const actualResourcePoolId = isFullyManaged ? 'aihc-serverless' : config.resourcePoolId;
@@ -117,32 +111,7 @@ export const createDataDumpTask = async (config: DataDumpTaskConfig): Promise<Ta
     if (isFullyManaged && config.queueId) {
       queryParams.queueID = config.queueId;
     }
-    
-    console.log('🔍 API调用参数处理:', {
-      resourcePoolType: config.resourcePoolType,
-      originalResourcePoolId: config.resourcePoolId,
-      actualResourcePoolId: actualResourcePoolId,
-      isFullyManaged: isFullyManaged,
-      queryParams: queryParams
-    });
 
-    // 显示API请求参数用于调试
-    const apiRequestInfo = {
-      url: `https://aihc.bj.baidubce.com/`,
-      method: 'POST',
-      queryParams: queryParams,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Version': 'v2'
-      },
-      body: taskConfig
-    };
-    
-    // 使用window.postMessage发送调试信息到组件
-    window.postMessage({
-      type: 'API_DEBUG_INFO',
-      data: apiRequestInfo
-    }, '*');
 
     // 调用OpenAPI创建任务
     const response = await callBecOpenApiWithConfig(

@@ -7,8 +7,7 @@ import {
   Typography, 
   message, 
   Spin,
-  Alert,
-  Modal
+  Alert
 } from 'antd';
 import { 
   DatabaseOutlined, 
@@ -94,14 +93,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
   // 错误状态
   const [error, setError] = useState<string>('');
   
-  // 调试Modal状态
-  const [debugModalVisible, setDebugModalVisible] = useState(false);
-  const [debugData, setDebugData] = useState<{
-    title: string;
-    originalConfig?: any;
-    taskConfig?: any;
-    apiRequestInfo?: any;
-  } | null>(null);
   
   // 请求管理器
   const requestManagerRef = useRef<RequestManager>({
@@ -135,21 +126,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
     checkSavedData();
   }, [datasetId, form]);
 
-  // 监听API调试信息
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'API_DEBUG_INFO') {
-        setDebugData({
-          title: '🔍 API调试信息 - 实际请求参数',
-          apiRequestInfo: event.data.data
-        });
-        setDebugModalVisible(true);
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
 
   // 获取数据集信息
   useEffect(() => {
@@ -857,115 +833,6 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         </div>
       </Form>
       
-      {/* 调试Modal */}
-      <Modal
-        title={debugData?.title || '调试信息'}
-        open={debugModalVisible}
-        onCancel={() => setDebugModalVisible(false)}
-        footer={[
-          <Button key="close" onClick={() => setDebugModalVisible(false)}>
-            关闭
-          </Button>
-        ]}
-        width={800}
-        style={{ fontSize: '12px' }}
-      >
-        {debugData && (
-          <div style={{ maxHeight: '60vh', overflow: 'auto' }}>
-            {debugData.apiRequestInfo ? (
-              // 显示API请求信息
-              <div>
-                <div style={{ marginBottom: '16px' }}>
-                  <Typography.Title level={5}>请求URL:</Typography.Title>
-                  <pre style={{ 
-                    background: '#f5f5f5', 
-                    padding: '12px', 
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    overflow: 'auto',
-                    maxHeight: '100px'
-                  }}>
-                    {debugData.apiRequestInfo.method} {debugData.apiRequestInfo.url}
-                  </pre>
-                </div>
-                
-                <div style={{ marginBottom: '16px' }}>
-                  <Typography.Title level={5}>查询参数:</Typography.Title>
-                  <pre style={{ 
-                    background: '#f5f5f5', 
-                    padding: '12px', 
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    overflow: 'auto',
-                    maxHeight: '100px'
-                  }}>
-                    {JSON.stringify(debugData.apiRequestInfo.queryParams, null, 2)}
-                  </pre>
-                </div>
-                
-                <div style={{ marginBottom: '16px' }}>
-                  <Typography.Title level={5}>请求Headers:</Typography.Title>
-                  <pre style={{ 
-                    background: '#f5f5f5', 
-                    padding: '12px', 
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    overflow: 'auto',
-                    maxHeight: '100px'
-                  }}>
-                    {JSON.stringify(debugData.apiRequestInfo.headers, null, 2)}
-                  </pre>
-                </div>
-                
-                <div>
-                  <Typography.Title level={5}>请求Body:</Typography.Title>
-                  <pre style={{ 
-                    background: '#f5f5f5', 
-                    padding: '12px', 
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    overflow: 'auto',
-                    maxHeight: '300px'
-                  }}>
-                    {JSON.stringify(debugData.apiRequestInfo.body, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            ) : (
-              // 显示组件参数信息
-              <div>
-                <div style={{ marginBottom: '16px' }}>
-                  <Typography.Title level={5}>原始配置:</Typography.Title>
-                  <pre style={{ 
-                    background: '#f5f5f5', 
-                    padding: '12px', 
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    overflow: 'auto',
-                    maxHeight: '200px'
-                  }}>
-                    {JSON.stringify(debugData.originalConfig, null, 2)}
-                  </pre>
-                </div>
-                
-                <div>
-                  <Typography.Title level={5}>任务配置:</Typography.Title>
-                  <pre style={{ 
-                    background: '#f5f5f5', 
-                    padding: '12px', 
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    overflow: 'auto',
-                    maxHeight: '200px'
-                  }}>
-                    {JSON.stringify(debugData.taskConfig, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </Modal>
     </div>
   );
 };
