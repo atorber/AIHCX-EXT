@@ -1,11 +1,12 @@
 import { createRoot } from 'react-dom/client';
-import PopupContainer from '../components/PopupContainer';
+import PopupContainerRedesigned from '../components/PopupContainerRedesigned';
+import '../styles/tailwind.css';
 import '../styles/popup.css';
 
 const container = document.getElementById('root');
 if (container) {
   const root = createRoot(container);
-  root.render(<PopupContainer />);
+  root.render(<PopupContainerRedesigned />);
 } else {
   console.error('Root container not found');
 }

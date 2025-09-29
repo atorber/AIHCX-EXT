@@ -5,6 +5,19 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 
 
 export default defineConfig({
   base: './',
+  css: {
+    postcss: './postcss.config.js',
+    preprocessorOptions: {
+      less: {
+        javascriptEnabled: true,
+        modifyVars: {
+          // 自定义主题变量
+          '@primary-color': '#1890ff',
+          '@border-radius-base': '6px',
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     {
