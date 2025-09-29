@@ -6,7 +6,6 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 
 export default defineConfig({
   base: './',
   css: {
-    postcss: './postcss.config.js',
     preprocessorOptions: {
       less: {
         javascriptEnabled: true,

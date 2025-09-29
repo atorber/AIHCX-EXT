@@ -1,6 +1,5 @@
 import { createRoot } from 'react-dom/client';
 import PopupContainerRedesigned from '../components/PopupContainerRedesigned';
-import '../styles/tailwind.css';
 import '../styles/popup.css';
 
 const container = document.getElementById('root');
