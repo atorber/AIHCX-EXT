@@ -26,48 +26,24 @@ const Header: React.FC<HeaderProps> = ({ pageName }) => {
   return (
     <AntHeader 
       style={{ 
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '12px 20px',
-        height: 'auto',
-        minHeight: '70px',
+        background: '#ffffff',
+        padding: '8px 16px',
+        height: '56px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
-        position: 'relative',
-        overflow: 'hidden'
+        borderBottom: '1px solid #e8e8e8',
+        boxShadow: 'none'
       }}
     >
-      {/* 背景装饰 */}
-      <div style={{
-        position: 'absolute',
-        top: '-50%',
-        right: '-20%',
-        width: '200px',
-        height: '200px',
-        background: 'rgba(255,255,255,0.1)',
-        borderRadius: '50%',
-        zIndex: 0
-      }} />
-      <div style={{
-        position: 'absolute',
-        bottom: '-30%',
-        left: '-10%',
-        width: '150px',
-        height: '150px',
-        background: 'rgba(255,255,255,0.05)',
-        borderRadius: '50%',
-        zIndex: 0
-      }} />
-
       {/* 左侧内容 */}
-      <div style={{ flex: 1, position: 'relative', zIndex: 1 }}>
+      <div style={{ flex: 1 }}>
         <Space direction="vertical" size={2}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Avatar 
               size="small" 
               style={{ 
-                background: 'rgba(255,255,255,0.2)',
+                background: '#1890ff',
                 color: 'white',
                 fontSize: '12px',
                 fontWeight: 'bold'
@@ -78,11 +54,10 @@ const Header: React.FC<HeaderProps> = ({ pageName }) => {
             <Title 
               level={4} 
               style={{ 
-                color: 'white', 
+                color: '#333333', 
                 margin: 0,
                 fontWeight: 600,
-                fontSize: '16px',
-                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                fontSize: '16px'
               }}
             >
               AIHC助手
@@ -90,7 +65,7 @@ const Header: React.FC<HeaderProps> = ({ pageName }) => {
             <Badge 
               count="v0.6" 
               style={{ 
-                backgroundColor: 'rgba(255,255,255,0.2)',
+                backgroundColor: '#1890ff',
                 color: 'white',
                 fontSize: '10px',
                 fontWeight: 'bold'
@@ -99,11 +74,10 @@ const Header: React.FC<HeaderProps> = ({ pageName }) => {
           </div>
           <Text 
             style={{ 
-              color: 'rgba(255,255,255,0.85)', 
+              color: '#666666', 
               fontSize: '12px',
               lineHeight: 1.2,
-              fontWeight: 400,
-              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+              fontWeight: 400
             }}
           >
             {pageName}
@@ -119,27 +93,15 @@ const Header: React.FC<HeaderProps> = ({ pageName }) => {
             icon={<QuestionCircleOutlined />}
             onClick={openHelp}
             style={{
-              color: 'rgba(255,255,255,0.9)',
+              color: '#666666',
               border: 'none',
-              background: 'rgba(255,255,255,0.1)',
-              borderRadius: '8px',
-              width: '36px',
-              height: '36px',
+              background: 'transparent',
+              borderRadius: '4px',
+              width: '32px',
+              height: '32px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              backdropFilter: 'blur(10px)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-              e.currentTarget.style.transform = 'scale(1.05) translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-              e.currentTarget.style.transform = 'scale(1) translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
+              justifyContent: 'center'
             }}
           />
         </Tooltip>
@@ -150,27 +112,15 @@ const Header: React.FC<HeaderProps> = ({ pageName }) => {
             icon={<SettingOutlined />}
             onClick={openSettings}
             style={{
-              color: 'rgba(255,255,255,0.9)',
+              color: '#666666',
               border: 'none',
-              background: 'rgba(255,255,255,0.1)',
-              borderRadius: '8px',
-              width: '36px',
-              height: '36px',
+              background: 'transparent',
+              borderRadius: '4px',
+              width: '32px',
+              height: '32px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              backdropFilter: 'blur(10px)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-              e.currentTarget.style.transform = 'scale(1.05) translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-              e.currentTarget.style.transform = 'scale(1) translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
+              justifyContent: 'center'
             }}
           />
         </Tooltip>
