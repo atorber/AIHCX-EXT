@@ -133,7 +133,7 @@ const DataDownloadInput: React.FC<DataDownloadInputProps> = ({ onParseUrl }) => 
     modelName?: string;
     openSourceModel?: string;
   }) => {
-    console.log('🚀 开始填充页面表单...');
+    // 开始填充页面表单
     console.log('解析结果:', parsed);
     console.log('原始URL:', url.trim());
     

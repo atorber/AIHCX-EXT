@@ -642,7 +642,7 @@ const handleUrlChange = () => {
     
     // 设置防抖延迟
     urlChangeDebounceTimer = window.setTimeout(() => {
-      console.log('[AIHC助手] ⏰ 防抖延迟结束，开始处理URL变化');
+      // 防抖延迟结束，开始处理URL变化
       
       // 移除现有的组件（如果存在）
       const existingToggle = document.getElementById('aihcx-helper-toggle');
@@ -938,7 +938,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
         // 等待页面更新后再填充字段
         setTimeout(() => {
-          console.log('[AIHC助手] 开始填充字段...');
+          // 开始填充字段
           
           // 2. 填充名称字段（数据集名称/模型名称都使用同一个data-name="datasetName"）
           const nameValue = data.type === 'DATASET' ? data.datasetName : data.modelName;

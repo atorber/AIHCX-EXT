@@ -88,7 +88,6 @@ class BceAihc {
             }
 
             const result = await response.json();
-            console.debug("返回的结果：", result);
             return result;
         } catch (err: any) {
             console.error("请求异常：", err);

@@ -171,7 +171,7 @@ const ChatTab: React.FC<ChatTabProps> = ({ chatConfig, isLoading: isConfigLoadin
     
     if (chatConfig?.serviceId && onLoadConfig) {
       try {
-        console.log('[ChatTab] 开始调用 onLoadConfig');
+        // 开始调用 onLoadConfig
         await onLoadConfig(chatConfig.serviceId);
         console.log('[ChatTab] onLoadConfig 调用完成');
       } catch (error) {

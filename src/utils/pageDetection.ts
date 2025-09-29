@@ -29,7 +29,7 @@ export const urlPatterns = {
 
 // 检测当前页面类型
 export const detectPageType = (url: string): PageInfo => {
-  console.log('[页面检测] 开始检测URL:', url);
+  // 检测URL
   
   // 首先检查是否在AIHC控制台域名下
   if (!isAIHCConsolePage(url)) {
@@ -47,7 +47,7 @@ export const detectPageType = (url: string): PageInfo => {
 
   // 按模式长度降序排序，确保更具体的模式优先匹配
   const sortedPatterns = Object.entries(urlPatterns).sort((a, b) => b[0].length - a[0].length);
-  console.log('[页面检测] 开始匹配URL模式，总计', sortedPatterns.length, '个模式');
+  // 匹配URL模式
   
   for (const [pattern, name] of sortedPatterns) {
     const isMatch = url.startsWith(pattern);
