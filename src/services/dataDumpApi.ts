@@ -74,17 +74,55 @@ export const createDataDumpTask = async (config: DataDumpTaskConfig): Promise<Ta
         {
           type: 'pfs',
           name: config.pfsInstanceId,
-          sourcePath:config.sourcePath,
+          sourcePath: config.sourcePath, // 去掉开头的/
           mountPath: '/mnt/pfs'
         },
         {
           type: 'bos',
           name: '',
-          sourcePath:config.originalStoragePath,
+          sourcePath: config.originalStoragePath.replace(/^\//, ''), // 去掉开头的/
           mountPath: '/mnt/bos'
         }
       ]
     };
+
+    // 打印详细的请求参数
+    console.log('🔍 详细请求参数:');
+    console.log('📋 URL参数:', {
+      action: 'CreateJob',
+      resourcePoolId: config.resourcePoolId
+    });
+    console.log('📦 请求Body:', JSON.stringify(taskConfig, null, 2));
+    console.log('📋 请求Headers:', {
+      'Content-Type': 'application/json',
+      'X-API-Version': 'v2'
+    });
+    console.log('🔍 PFS实例ID调试:', {
+      pfsInstanceId: config.pfsInstanceId,
+      type: typeof config.pfsInstanceId,
+      length: config.pfsInstanceId?.length
+    });
+
+    // 显示API请求参数用于调试
+    const apiRequestInfo = {
+      url: `https://aihc.bj.baidubce.com/`,
+      method: 'POST',
+      queryParams: {
+        action: 'CreateJob',
+        resourcePoolId: config.resourcePoolId
+      },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Version': 'v2'
+      },
+      body: taskConfig
+    };
+    
+    // 使用window.postMessage发送调试信息到组件
+    window.postMessage({
+      type: 'API_DEBUG_INFO',
+      data: apiRequestInfo
+    }, '*');
 
     // 调用OpenAPI创建任务
     const response = await callBecOpenApiWithConfig(

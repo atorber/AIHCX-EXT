@@ -46,7 +46,7 @@ const callBecOpenApi = async (ak: string, sk: string, host: string, path: string
   }
 
   try {
-    console.debug("请求参数：", {
+    console.log("🔍 API请求参数：", {
       method,
       url: url.toString(),
       headers: requestHeaders,
@@ -85,7 +85,7 @@ const callBecOpenApi = async (ak: string, sk: string, host: string, path: string
     }
 
     const result = await response.json();
-    console.debug("返回的结果：", result);
+    console.log("📦 API返回结果：", result);
     return result;
   } catch (err: any) {
     console.error("请求异常：", err);

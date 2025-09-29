@@ -185,7 +185,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       setConfig(prev => ({
         ...prev,
         storagePath: defaultStoragePath,
-        originalStoragePath: info.datasetStoragePath // 保存原始路径
+        originalStoragePath: defaultStoragePath // 保存去除bos:前缀的路径
       }));
       
     } catch (err) {
@@ -456,7 +456,8 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         pfsInstanceId: config.pfsId
       };
 
-      console.log('提交数据转储任务:', taskConfig);
+      console.log('📋 提交数据转储任务 - 原始配置:', config);
+      console.log('📦 提交数据转储任务 - 任务配置:', taskConfig);
 
       // 调用API创建任务
       const result = await createDataDumpTask(taskConfig);

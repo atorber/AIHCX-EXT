@@ -877,13 +877,64 @@ class AIHCApiService {
           return [];
         }
         
-        const pfsInstances = pfsStorages.map((storage: any) => ({
-          id: storage.id, // PFS实例ID (如: pfs-7xWeAt)
-          name: `PFS-${storage.id}`,
-          resourcePoolId: resourcePoolId,
-          status: 'ready',
-          instanceType: storage.type // 如: pfsL1
-        }));
+        // 检查是否需要通过存储信息接口获取PFS实例ID
+        const pfsInstances = [];
+        
+        for (const storage of pfsStorages) {
+          console.log(`处理PFS存储:`, storage);
+          
+          if (storage.id.startsWith('mt-')) {
+            // 如果是挂载点ID，需要通过存储信息接口获取PFS实例ID
+            console.log(`检测到挂载点ID: ${storage.id}，需要通过存储信息接口获取PFS实例ID`);
+            
+            try {
+              const storageInfo = await this.getManagedResourcePoolStorageInfo(resourcePoolId, storage.id);
+              console.log('存储信息API返回:', storageInfo);
+              
+              // 从存储信息中提取PFS实例列表
+              const instances = storageInfo.pfsInstances || [];
+              console.log('从存储信息获取的PFS实例数量:', instances.length);
+              
+              // 过滤并映射PFS实例
+              const filteredInstances = instances
+                .filter((instance: any) => instance.instanceStatus === 'RUNNING')
+                .map((instance: any) => ({
+                  id: instance.instanceId, // PFS实例ID (如: pfs-qnL8Jh)
+                  name: instance.name || `PFS-${instance.instanceId}`,
+                  resourcePoolId: resourcePoolId,
+                  status: 'ready',
+                  capacity: instance.capacity,
+                  usage: instance.usage,
+                  instanceType: instance.instanceType,
+                  mountPath: instance.mountTargets?.[0]?.mountPath
+                }));
+              
+              console.log('从存储信息映射的PFS实例:', filteredInstances);
+              pfsInstances.push(...filteredInstances);
+              
+            } catch (error) {
+              console.error(`获取存储信息失败 (挂载点ID: ${storage.id}):`, error);
+              // 如果获取失败，仍然使用原始ID作为备选
+              pfsInstances.push({
+                id: storage.id,
+                name: `PFS-${storage.id}`,
+                resourcePoolId: resourcePoolId,
+                status: 'ready',
+                instanceType: storage.type
+              });
+            }
+          } else {
+            // 如果已经是PFS实例ID，直接使用
+            console.log(`检测到PFS实例ID: ${storage.id}，直接使用`);
+            pfsInstances.push({
+              id: storage.id, // PFS实例ID (如: pfs-7xWeAt)
+              name: `PFS-${storage.id}`,
+              resourcePoolId: resourcePoolId,
+              status: 'ready',
+              instanceType: storage.type // 如: pfsL1
+            });
+          }
+        }
         
         console.log('返回自运维PFS实例:', pfsInstances);
         return pfsInstances;
