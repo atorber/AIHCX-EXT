@@ -6,6 +6,7 @@ export interface DataDumpTaskConfig {
   datasetName: string;
   sourcePath: string;
   targetPath: string;
+  originalStoragePath: string;
   resourcePoolId: string;
   queueId: string;
   pfsInstanceId: string;
@@ -42,7 +43,12 @@ export const createDataDumpTask = async (config: DataDumpTaskConfig): Promise<Ta
     const taskConfig = {
       name: `data-dump-${config.datasetId}-${Date.now()}`,
       jobType: 'PyTorchJob',
-      command: `sleep 1d`,
+      command: 'echo "🚀 开始数据转储操作..." \
+        && START_TIME=$(date +%s) \
+        && cp -vr /mnt/bos/* /mnt/pfs/ \
+        && END_TIME=$(date +%s) \
+        && DIFF=$((END_TIME - START_TIME)) \
+        && echo "✅ 数据转储完成！耗时: ${DIFF}秒"',
       jobSpec: {
         replicas: 1,
         image: 'registry.baidubce.com/aihc-aiak/aiak-megatron:ubuntu20.04-cu11.8-torch1.14.0-py38_v1.2.7.12_release',
@@ -64,11 +70,18 @@ export const createDataDumpTask = async (config: DataDumpTaskConfig): Promise<Ta
         enableRDMA: false
       },
       labels: [],
-      datasource: [
+      datasources: [
         {
           type: 'pfs',
           name: config.pfsInstanceId,
-          mountPath: '/mnt/cluster'
+          sourcePath:config.sourcePath,
+          mountPath: '/mnt/pfs'
+        },
+        {
+          type: 'bos',
+          name: '',
+          sourcePath:config.originalStoragePath,
+          mountPath: '/mnt/bos'
         }
       ]
     };

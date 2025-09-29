@@ -433,124 +433,8 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
     }
   };
 
-  // 填充任务信息到创建任务页面
-  const handleFillTaskInfo = () => {
-    try {
-      const savedTemplate = localStorage.getItem('aihc_data_dump_template');
-      if (!savedTemplate) {
-        alert('没有找到任务模板数据');
-        return;
-      }
 
-      const taskTemplate = JSON.parse(savedTemplate);
-      
-      // 使用Chrome扩展的tabs API来填充表单
-      if (typeof chrome !== 'undefined' && chrome.tabs) {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          if (tabs[0] && tabs[0].id) {
-            chrome.scripting.executeScript({
-              target: { tabId: tabs[0].id },
-              func: fillCreateTaskForm,
-              args: [taskTemplate]
-            });
-          }
-        });
-      } else {
-        // 如果不在扩展环境中，使用window.postMessage
-        window.postMessage({
-          type: 'FILL_TASK_FORM',
-          data: taskTemplate
-        }, '*');
-      }
-      
-      alert('任务信息已填充到创建任务页面');
-    } catch (error) {
-      console.error('填充任务信息失败:', error);
-      alert('填充任务信息失败: ' + (error instanceof Error ? error.message : '未知错误'));
-    }
-  };
 
-  // 返回数据集下载详情页
-  const handleReturnToDataset = () => {
-    // 清除localStorage中的数据
-    localStorage.removeItem('aihc_data_dump_config');
-    localStorage.removeItem('aihc_data_dump_template');
-    
-    // 重置状态
-    setIsRedirected(false);
-    
-    // 返回上一页
-    window.history.back();
-  };
-
-  // 在创建任务页面上下文中执行的填充表单函数
-  const fillCreateTaskForm = (taskTemplate: any) => {
-    try {
-      // 填充任务名称
-      const nameInput = document.querySelector('input[data-test-target="name"]') as HTMLInputElement;
-      if (nameInput) {
-        nameInput.value = taskTemplate.name;
-        nameInput.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-
-      // 填充镜像地址
-      const imageInput = document.querySelector('input[placeholder="请输入镜像地址"]') as HTMLInputElement;
-      if (imageInput) {
-        imageInput.value = 'registry.baidubce.com/paddlepaddle/paddle:2.5.2-gpu-cuda11.2-cudnn8-devel';
-        imageInput.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-
-      // 填充执行命令
-      const commandTextarea = document.querySelector('textarea[data-uri="inmemory://model/1"]') as HTMLTextAreaElement;
-      if (commandTextarea) {
-        commandTextarea.value = taskTemplate.command;
-        commandTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-
-      // 设置资源池类型
-      const resourcePoolTypeInput = document.querySelector(`input[name="rc_unique_35"][value="${taskTemplate.resourcePoolType}"]`) as HTMLInputElement;
-      if (resourcePoolTypeInput) {
-        resourcePoolTypeInput.checked = true;
-        resourcePoolTypeInput.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-
-      // 设置优先级
-      const priorityInput = document.querySelector('input[name="rc_unique_37"][value="normal"]') as HTMLInputElement;
-      if (priorityInput) {
-        priorityInput.checked = true;
-        priorityInput.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-
-      // 设置训练框架
-      const frameworkInput = document.querySelector('input[name="rc_unique_38"][value="pytorch"]') as HTMLInputElement;
-      if (frameworkInput) {
-        frameworkInput.checked = true;
-        frameworkInput.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-
-      // 设置共享内存
-      const sharedMemoryInput = document.querySelector('input[placeholder="请输入共享内存"]') as HTMLInputElement;
-      if (sharedMemoryInput) {
-        sharedMemoryInput.value = '10';
-        sharedMemoryInput.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-
-      // 设置任务退出后自动删除
-      const autoDeleteSwitch = document.querySelector('button[data-name="isCustomDelete"]') as HTMLButtonElement;
-      if (autoDeleteSwitch) {
-        autoDeleteSwitch.click();
-      }
-
-      // 设置自动容错
-      const faultToleranceSwitch = document.querySelector('button[data-name="faultTolerance"]') as HTMLButtonElement;
-      if (faultToleranceSwitch && !faultToleranceSwitch.getAttribute('aria-checked')) {
-        faultToleranceSwitch.click();
-      }
-
-    } catch (error) {
-      console.error('填充表单失败:', error);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     try {
@@ -566,6 +450,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         datasetName: config.datasetName,
         sourcePath: config.originalStoragePath || config.storagePath,
         targetPath: `/mnt/cluster/datasets/${config.datasetId}`,
+        originalStoragePath: config.originalStoragePath || config.storagePath,
         resourcePoolId: config.resourcePoolId,
         queueId: config.queueId,
         pfsInstanceId: config.pfsId
@@ -853,24 +738,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
 
         {/* 操作按钮 */}
         <div className="form-actions">
-          {isRedirected ? (
-            <>
-              <button
-                type="button"
-                onClick={handleReturnToDataset}
-                className="btn btn-secondary"
-              >
-                返回数据集下载详情页
-              </button>
-              <button
-                type="button"
-                onClick={handleFillTaskInfo}
-                className="btn btn-primary"
-              >
-                填充任务信息
-              </button>
-            </>
-          ) : (
+          {
             <>
               <button
                 type="submit"
@@ -880,7 +748,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
                 {isSubmitting ? '提交中...' : '提交转储任务'}
               </button>
             </>
-          )}
+          }
         </div>
       </form>
 
