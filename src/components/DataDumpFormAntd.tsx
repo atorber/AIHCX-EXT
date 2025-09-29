@@ -500,6 +500,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         targetPath: config.storagePath,
         originalStoragePath: config.originalStoragePath || '',
         resourcePoolId: config.resourcePoolId,
+        resourcePoolType: config.resourcePoolType,
         queueId: config.queueId,
         pfsInstanceId: config.pfsId
       };

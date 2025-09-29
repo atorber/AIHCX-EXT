@@ -452,6 +452,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         targetPath: `/mnt/cluster/datasets/${config.datasetId}`,
         originalStoragePath: config.originalStoragePath || config.storagePath,
         resourcePoolId: config.resourcePoolId,
+        resourcePoolType: config.resourcePoolType,
         queueId: config.queueId,
         pfsInstanceId: config.pfsId
       };

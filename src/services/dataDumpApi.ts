@@ -8,6 +8,7 @@ export interface DataDumpTaskConfig {
   targetPath: string;
   originalStoragePath: string;
   resourcePoolId: string;
+  resourcePoolType: '自运维' | '全托管';
   queueId: string;
   pfsInstanceId: string;
 }
@@ -103,14 +104,33 @@ export const createDataDumpTask = async (config: DataDumpTaskConfig): Promise<Ta
       length: config.pfsInstanceId?.length
     });
 
+    // 根据资源池类型处理API调用参数
+    const isFullyManaged = config.resourcePoolType === '全托管';
+    const actualResourcePoolId = isFullyManaged ? 'aihc-serverless' : config.resourcePoolId;
+    
+    const queryParams: any = {
+      action: 'CreateJob',
+      resourcePoolId: actualResourcePoolId
+    };
+    
+    // 如果是全托管资源池，添加queueID参数
+    if (isFullyManaged && config.queueId) {
+      queryParams.queueID = config.queueId;
+    }
+    
+    console.log('🔍 API调用参数处理:', {
+      resourcePoolType: config.resourcePoolType,
+      originalResourcePoolId: config.resourcePoolId,
+      actualResourcePoolId: actualResourcePoolId,
+      isFullyManaged: isFullyManaged,
+      queryParams: queryParams
+    });
+
     // 显示API请求参数用于调试
     const apiRequestInfo = {
       url: `https://aihc.bj.baidubce.com/`,
       method: 'POST',
-      queryParams: {
-        action: 'CreateJob',
-        resourcePoolId: config.resourcePoolId
-      },
+      queryParams: queryParams,
       headers: {
         'Content-Type': 'application/json',
         'X-API-Version': 'v2'
@@ -128,10 +148,7 @@ export const createDataDumpTask = async (config: DataDumpTaskConfig): Promise<Ta
     const response = await callBecOpenApiWithConfig(
       '/',
       'POST',
-      {
-        action: 'CreateJob',
-        resourcePoolId: config.resourcePoolId
-      },
+      queryParams,
       taskConfig,
       {
         'Content-Type': 'application/json',
