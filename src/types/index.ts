@@ -100,6 +100,7 @@ export interface ModelDeploymentConfig {
   resourcePoolType: '自运维' | '全托管';
   resourcePoolId: string;
   queueId: string;
+  imageAddress: string;
   startupCommand: string;
   modelId?: string;
 }

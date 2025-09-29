@@ -17,6 +17,7 @@ interface ModelDeploymentConfig {
   resourcePoolType: '自运维' | '全托管';
   resourcePoolId: string;
   queueId: string;
+  imageAddress: string;
   startupCommand: string;
   modelId?: string;
 }
@@ -42,10 +43,11 @@ const ModelDeploymentForm: React.FC<ModelDeploymentFormProps> = ({ modelId, onSu
   // 表单配置
   const [config, setConfig] = useState<ModelDeploymentConfig>({
     modelVersion: '',
-    accelerationFramework: '',
+    accelerationFramework: 'sglang',
     resourcePoolType: '自运维',
     resourcePoolId: '',
     queueId: '',
+    imageAddress: '',
     startupCommand: '',
     modelId: modelId || ''
   });
@@ -240,6 +242,13 @@ const ModelDeploymentForm: React.FC<ModelDeploymentFormProps> = ({ modelId, onSu
     form.setFieldsValue(updatedConfig);
   };
 
+  // 处理镜像地址变化
+  const handleImageAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const updatedConfig = { ...config, imageAddress: e.target.value };
+    setConfig(updatedConfig);
+    form.setFieldsValue(updatedConfig);
+  };
+
   // 处理启动命令变化
   const handleStartupCommandChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const updatedConfig = { ...config, startupCommand: e.target.value };
@@ -260,6 +269,7 @@ const ModelDeploymentForm: React.FC<ModelDeploymentFormProps> = ({ modelId, onSu
         resourcePoolType: values.resourcePoolType,
         resourcePoolId: values.resourcePoolId,
         queueId: values.queueId,
+        imageAddress: values.imageAddress,
         startupCommand: values.startupCommand,
         modelId: modelId || ''
       };
@@ -301,10 +311,11 @@ const ModelDeploymentForm: React.FC<ModelDeploymentFormProps> = ({ modelId, onSu
     setDeploymentResult(null);
     setConfig({
       modelVersion: '',
-      accelerationFramework: '',
+      accelerationFramework: 'sglang',
       resourcePoolType: '自运维',
       resourcePoolId: '',
       queueId: '',
+      imageAddress: '',
       startupCommand: '',
       modelId: modelId || ''
     });
@@ -335,10 +346,11 @@ const ModelDeploymentForm: React.FC<ModelDeploymentFormProps> = ({ modelId, onSu
         layout="vertical"
         initialValues={{
           modelVersion: '',
-          accelerationFramework: '',
+          accelerationFramework: 'sglang',
           resourcePoolType: '自运维',
           resourcePoolId: '',
           queueId: '',
+          imageAddress: '',
           startupCommand: ''
         }}
         style={{ margin: 0 }}
@@ -479,6 +491,21 @@ const ModelDeploymentForm: React.FC<ModelDeploymentFormProps> = ({ modelId, onSu
               </Option>
             ))}
           </Select>
+        </Form.Item>
+
+        {/* 镜像地址 */}
+        <Form.Item 
+          name="imageAddress"
+          rules={[{ required: true, message: '请输入镜像地址' }]}
+          style={{ marginBottom: '8px' }}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>镜像地址 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          extra={<span style={{ fontSize: '10px', color: '#999' }}>Docker镜像的拉取地址，如：registry.baidubce.com/aihc-aiak/aiak-megatron:ubuntu20.04-cu11.8-torch1.14.0-py38_v1.2.7.12_release</span>}
+        >
+          <Input
+            placeholder="请输入镜像地址"
+            onChange={handleImageAddressChange}
+            style={{ fontSize: '11px' }}
+          />
         </Form.Item>
 
         {/* 启动命令 */}
