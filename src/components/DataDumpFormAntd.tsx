@@ -153,6 +153,22 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
     }
   }, [datasetId, form]);
 
+  // 组件初始化时自动加载自运维资源池列表
+  useEffect(() => {
+    const initializeResourcePools = async () => {
+      // 只有在没有保存的配置数据时才自动加载
+      const savedData = localStorage.getItem('aihc_data_dump_config');
+      if (!savedData || JSON.parse(savedData).datasetId !== datasetId) {
+        console.log('[DataDumpForm] 初始化时自动加载自运维资源池列表');
+        await fetchResourcePools('自运维');
+      }
+    };
+
+    // 延迟执行，确保组件完全初始化
+    const timer = setTimeout(initializeResourcePools, 100);
+    return () => clearTimeout(timer);
+  }, [datasetId]);
+
   // 获取资源池列表
   const fetchResourcePools = async (resourcePoolType: string) => {
     const manager = requestManagerRef.current;
@@ -181,14 +197,35 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
           manager.currentResourcePoolType === resourcePoolType) {
         setResourcePools(pools);
         
-        // 如果当前选择的资源池不在新列表中，清空选择
-        if (config.resourcePoolId && !pools.find((pool: ResourcePool) => pool.resourcePoolId === config.resourcePoolId)) {
-          const updatedConfig = { ...config, resourcePoolId: '', queueId: '', pfsId: '' };
-          setConfig(updatedConfig);
-          form.setFieldsValue(updatedConfig);
-          setQueues([]);
-          setPfsInstances([]);
-        }
+        // 使用函数式更新来获取最新的config状态
+        setConfig(currentConfig => {
+          // 如果当前选择的资源池不在新列表中，清空选择
+          if (currentConfig.resourcePoolId && !pools.find((pool: ResourcePool) => pool.resourcePoolId === currentConfig.resourcePoolId)) {
+            const updatedConfig = { ...currentConfig, resourcePoolId: '', queueId: '', pfsId: '' };
+            form.setFieldsValue(updatedConfig);
+            setQueues([]);
+            setPfsInstances([]);
+            return updatedConfig;
+          } else if (pools.length > 0 && !currentConfig.resourcePoolId) {
+            // 如果没有选择资源池且有可用资源池，默认选中第一个
+            const firstPool = pools[0];
+            const updatedConfig = { 
+              ...currentConfig, 
+              resourcePoolId: firstPool.resourcePoolId,
+              queueId: '',
+              pfsId: ''
+            };
+            form.setFieldsValue(updatedConfig);
+            setQueues([]);
+            setPfsInstances([]);
+            
+            // 自动获取队列和PFS实例
+            fetchQueues(firstPool.resourcePoolId);
+            fetchPfsInstances(firstPool.resourcePoolId);
+            return updatedConfig;
+          }
+          return currentConfig;
+        });
       }
     } catch (error: any) {
       if (error.name !== 'AbortError') {
@@ -224,13 +261,28 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       if (currentSequence === manager.queuesSequence) {
         setQueues(queues);
         
-        // 如果当前选择的队列不在新列表中，清空选择
-        if (config.queueId && !queues.find((queue: Queue) => queue.queueId === config.queueId)) {
-          const updatedConfig = { ...config, queueId: '', pfsId: '' };
-          setConfig(updatedConfig);
-          form.setFieldsValue(updatedConfig);
-          setPfsInstances([]);
-        }
+        // 使用函数式更新来获取最新的config状态
+        setConfig(currentConfig => {
+          // 如果当前选择的队列不在新列表中，清空选择
+          if (currentConfig.queueId && !queues.find((queue: Queue) => queue.queueId === currentConfig.queueId)) {
+            const updatedConfig = { ...currentConfig, queueId: '', pfsId: '' };
+            form.setFieldsValue(updatedConfig);
+            setPfsInstances([]);
+            return updatedConfig;
+          } else if (queues.length > 0 && !currentConfig.queueId) {
+            // 如果没有选择队列且有可用队列，默认选中第一个
+            const firstQueue = queues[0];
+            const updatedConfig = { 
+              ...currentConfig, 
+              queueId: firstQueue.queueId,
+              pfsId: ''
+            };
+            form.setFieldsValue(updatedConfig);
+            setPfsInstances([]);
+            return updatedConfig;
+          }
+          return currentConfig;
+        });
       }
     } catch (error: any) {
       if (error.name !== 'AbortError') {
@@ -268,12 +320,25 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
       if (currentSequence === manager.pfsInstancesSequence) {
         setPfsInstances(instances);
         
-        // 如果当前选择的PFS实例不在新列表中，清空选择
-        if (config.pfsId && !instances.find((instance: PFSInstance) => instance.id === config.pfsId)) {
-          const updatedConfig = { ...config, pfsId: '' };
-          setConfig(updatedConfig);
-          form.setFieldsValue(updatedConfig);
-        }
+        // 使用函数式更新来获取最新的config状态
+        setConfig(currentConfig => {
+          // 如果当前选择的PFS实例不在新列表中，清空选择
+          if (currentConfig.pfsId && !instances.find((instance: PFSInstance) => instance.id === currentConfig.pfsId)) {
+            const updatedConfig = { ...currentConfig, pfsId: '' };
+            form.setFieldsValue(updatedConfig);
+            return updatedConfig;
+          } else if (instances.length > 0 && !currentConfig.pfsId) {
+            // 如果没有选择PFS实例且有可用实例，默认选中第一个
+            const firstInstance = instances[0];
+            const updatedConfig = { 
+              ...currentConfig, 
+              pfsId: firstInstance.id
+            };
+            form.setFieldsValue(updatedConfig);
+            return updatedConfig;
+          }
+          return currentConfig;
+        });
       }
     } catch (error: any) {
       if (error.name !== 'AbortError') {
@@ -472,6 +537,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         >
           <Select
             placeholder="请选择资源池类型"
+            value={config.resourcePoolType}
             onChange={handleResourcePoolTypeChange}
             suffixIcon={<SettingOutlined />}
             style={{ width: '100%', fontSize: '11px' }}
@@ -490,8 +556,10 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         >
           <Select
             placeholder="请选择资源池"
+            value={config.resourcePoolId}
             onChange={handleResourcePoolChange}
             loading={isLoadingResourcePools}
+            disabled={isLoadingResourcePools || !config.resourcePoolType}
             notFoundContent={isLoadingResourcePools ? <Spin size="small" /> : '暂无数据'}
             style={{ width: '100%', fontSize: '11px' }}
           >
@@ -512,8 +580,10 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         >
           <Select
             placeholder="请选择队列"
+            value={config.queueId}
             onChange={handleQueueChange}
             loading={isLoadingQueues}
+            disabled={isLoadingQueues || !config.resourcePoolId}
             notFoundContent={isLoadingQueues ? <Spin size="small" /> : '暂无数据'}
             style={{ width: '100%', fontSize: '11px' }}
           >
@@ -534,8 +604,10 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         >
           <Select
             placeholder="请选择PFS实例"
+            value={config.pfsId}
             onChange={handlePfsChange}
             loading={isLoadingPfsInstances}
+            disabled={isLoadingPfsInstances || !config.resourcePoolId}
             notFoundContent={isLoadingPfsInstances ? <Spin size="small" /> : '暂无数据'}
             style={{ width: '100%', fontSize: '11px' }}
           >
