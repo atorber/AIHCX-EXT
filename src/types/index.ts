@@ -87,8 +87,12 @@ export interface DataDumpConfig {
 
 // 数据导入相关类型定义
 export interface DataImportConfig {
+  datasetVersion: string;
   importType: 'HuggingFace' | 'ModelScope' | '数据集';
   importUrl: string;
+  resourcePoolType: '自运维' | '全托管';
+  resourcePoolId: string;
+  queueId: string;
   datasetId?: string;
   datasetCategory?: string; // 数据集类别
 }

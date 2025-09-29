@@ -992,6 +992,50 @@ class AIHCApiService {
     }
   }
 
+  // 获取数据集版本列表
+  async getDatasetVersions(datasetId: string, abortController?: AbortController): Promise<any[]> {
+    const url = `${this.baseUrl}/aihc/asset/v1/datasets/${datasetId}/versions?tab=versions&pageNo=1&pageSize=100&locale=zh-cn&_=${Date.now()}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-bce-jt': this.getBaiduAuthToken()
+        },
+        signal: abortController?.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.result && data.result.versions) {
+        // 转换API返回的版本数据格式
+        return data.result.versions.map((version: any) => ({
+          versionId: version.id,
+          versionName: version.version,
+          description: `版本 ${version.version}`,
+          createTime: version.createTime,
+          createUser: version.createUserName,
+          mountPath: version.mountPath,
+          storagePath: version.storagePath,
+          updateTime: version.updateTime
+        }));
+      } else {
+        throw new Error(data.message || '获取数据集版本失败');
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        throw error;
+      }
+      console.error('获取数据集版本失败:', error);
+      throw new Error(`获取数据集版本失败: ${error.message}`);
+    }
+  }
+
   // 获取模型版本列表
   async getModelVersions(modelId: string, abortController?: AbortController): Promise<any[]> {
     const url = `${this.baseUrl}/aihc/asset/v1/models/${modelId}/versions?tab=versions&pageNo=1&pageSize=100&locale=zh-cn&_=${Date.now()}`;
