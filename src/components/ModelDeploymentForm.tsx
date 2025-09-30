@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Form, Select, Input, Button, message, Alert, Spin } from 'antd';
 import { SendOutlined, ReloadOutlined } from '@ant-design/icons';
 import { aihcApiService } from '../services/aihcApi';
+import { BceAihc } from '../utils/sdk/aihc';
+import { getActiveConfigProfile, getPluginConfig } from '../utils/config';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -256,6 +258,33 @@ const ModelDeploymentForm: React.FC<ModelDeploymentFormProps> = ({ modelId, onSu
     form.setFieldsValue(updatedConfig);
   };
 
+  // 获取配置信息
+  const getConfig = async () => {
+    try {
+      const activeProfile = await getActiveConfigProfile();
+      if (activeProfile) {
+        return {
+          ak: activeProfile.ak,
+          sk: activeProfile.sk,
+          host: activeProfile.host
+        };
+      }
+      const pluginConfig = await getPluginConfig();
+      return {
+        ak: pluginConfig.ak,
+        sk: pluginConfig.sk,
+        host: pluginConfig.host
+      };
+    } catch (error) {
+      console.error('获取配置失败:', error);
+      return {
+        ak: '',
+        sk: '',
+        host: 'aihc.bj.baidubce.com'
+      };
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
@@ -276,19 +305,113 @@ const ModelDeploymentForm: React.FC<ModelDeploymentFormProps> = ({ modelId, onSu
 
       console.log('🚀 提交模型服务部署任务:', deploymentConfig);
 
-      // 这里应该调用实际的部署API
-      // 暂时模拟成功响应
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 获取配置信息
+      const config = await getConfig();
+      if (!config.ak || !config.sk) {
+        throw new Error('请先配置AK/SK');
+      }
+
+      // 创建SDK实例
+      const bceAihc = new BceAihc(config.ak, config.sk, config.host);
+
+      // 构建服务配置 - 按照API文档的字段顺序
+      const serviceConfig = {
+        // 日志配置
+        log: {
+          persistent: false
+        },
+        // 实例数量
+        instanceCount: 1,
+        // 杂项配置
+        misc: {
+          podAnnotations: {
+            "prometheus.io/scrape": "false"
+          },
+          podLabels: {
+            "scheduling.volcano.sh/group-min-member": "1"
+          },
+          gracePeriodSec: 30,
+          fedPodsPerIns: 0
+        },
+        // 资源池配置
+        resourcePool: {
+          resourcePoolId: values.resourcePoolId,
+          resourcePoolName: resourcePools.find((pool: any) => pool.resourcePoolId === values.resourcePoolId)?.resourcePoolName || '',
+          queueName: values.queueId ? queues.find((queue: any) => queue.queueId === values.queueId)?.queueName || 'default' : 'default',
+          resourcePoolType: values.resourcePoolType === '自运维' ? 'self-managed' : 'fully-managed'
+        },
+        // 部署配置
+        deploy: {
+          schedule: {
+            priority: "high"
+          },
+          canaryStrategy: {
+            maxSurge: 25,
+            maxUnavailable: 25
+          }
+        },
+        // 服务名称
+        name: `model-service-${values.modelVersion}-${Date.now()}`,
+        // 加速器类型
+        acceleratorType: "",
+        // 工作负载类型
+        workloadType: "",
+        // 容器配置
+        containers: [
+          {
+            name: "model-container",
+            cpus: 2,
+            memory: 4,
+            acceleratorCount: 0,
+            command: values.startupCommand ? values.startupCommand.split(' ') : [
+              "/bin/sh",
+              "-c",
+              "sleep inf"
+            ],
+            ports: [
+              {
+                name: "HTTP",
+                port: 8000
+              }
+            ],
+            envs: {
+              MODEL_VERSION: values.modelVersion,
+              ACCELERATION_FRAMEWORK: values.accelerationFramework
+            },
+            image: {
+              imageType: 0,
+              imageUrl: values.imageAddress
+            },
+            volumeMounts: [],
+            startupsProbe: null,
+            readinessProbe: null,
+            livenessProbe: null
+          }
+        ],
+        // 访问配置
+        access: {
+          publicAccess: false,
+          networkType: "aiGateway",
+          aiGateway: {
+            enableAuth: true
+          }
+        }
+      };
+
+      console.log('📋 服务配置:', serviceConfig);
+
+      // 调用CreateService API
+      const createServiceResult = await bceAihc.CreateService(serviceConfig);
 
       const result = {
         success: true,
-        serviceId: `service-${Date.now()}`,
+        serviceId: createServiceResult.serviceId,
         message: '模型服务部署任务已创建成功'
       };
 
       setDeploymentResult(result);
       setShowResult(true);
-      message.success('模型服务部署任务创建成功');
+      message.success(`模型服务部署成功！服务ID: ${createServiceResult.serviceId}`);
 
       // 通知父组件
       if (onSubmit) {
