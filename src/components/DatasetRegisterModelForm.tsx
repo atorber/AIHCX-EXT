@@ -41,7 +41,7 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({
     datasetVersion: '',
     modelName: '',
     modelDescription: '',
-    modelFormat: 'PyTorch',
+    modelFormat: 'HuggingFace',
     versionDescription: '',
     storageBucket: '',
     storagePath: '',
@@ -175,7 +175,7 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({
       datasetVersion: '',
       modelName: '',
       modelDescription: '',
-      modelFormat: 'PyTorch',
+      modelFormat: 'HuggingFace',
       versionDescription: '',
       storageBucket: '',
       storagePath: '',
@@ -217,7 +217,7 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({
           datasetVersion: '',
           modelName: '',
           modelDescription: '',
-          modelFormat: 'PyTorch',
+          modelFormat: 'HuggingFace',
           versionDescription: '',
           storageBucket: '',
           storagePath: '',
@@ -266,7 +266,7 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({
                 <strong>版本号:</strong> {selectedVersionInfo.versionName}
               </div>
               <div style={{ marginBottom: '2px' }}>
-                <strong>挂载路径:</strong> {selectedVersionInfo.mountPath}
+                <strong>默认挂载路径:</strong> {selectedVersionInfo.mountPath}
               </div>
               <div style={{ marginBottom: '2px' }}>
                 <strong>存储路径:</strong> {selectedVersionInfo.storagePath}
@@ -322,10 +322,10 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({
             value={config.modelFormat}
             style={{ width: '100%', fontSize: '11px' }}
           >
-            <Option value="PyTorch">PyTorch</Option>
-            <Option value="TensorFlow">TensorFlow</Option>
+            <Option value="HuggingFace">HuggingFace</Option>
+            <Option value="MegatronCore">MegatronCore</Option>
             <Option value="ONNX">ONNX</Option>
-            <Option value="PaddlePaddle">PaddlePaddle</Option>
+            <Option value="TensorRT">TensorRT</Option>
           </Select>
         </Form.Item>
 
@@ -361,28 +361,26 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({
           {/* 存储桶 */}
           <Form.Item 
             name="storageBucket"
-            rules={[{ required: true, message: '请输入存储桶' }]}
             style={{ marginBottom: '8px' }}
-            label={<span style={{ fontSize: '11px', color: '#666' }}>存储桶 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-            extra={<span style={{ fontSize: '10px', color: '#999' }}>BOS存储桶名称</span>}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>存储桶</span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>BOS存储桶名称（自动填充）</span>}
           >
             <Input
-              placeholder="请输入存储桶名称"
-              style={{ fontSize: '11px' }}
+              disabled
+              style={{ fontSize: '11px', backgroundColor: '#f5f5f5' }}
             />
           </Form.Item>
 
           {/* 存储路径 */}
           <Form.Item 
             name="storagePath"
-            rules={[{ required: true, message: '请输入存储路径' }]}
             style={{ marginBottom: '8px' }}
-            label={<span style={{ fontSize: '11px', color: '#666' }}>存储路径 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-            extra={<span style={{ fontSize: '10px', color: '#999' }}>模型在存储系统中的路径</span>}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>存储路径</span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>模型在存储系统中的路径（自动填充）</span>}
           >
             <Input
-              placeholder="请输入存储路径，如：/path/to/model"
-              style={{ fontSize: '11px' }}
+              disabled
+              style={{ fontSize: '11px', backgroundColor: '#f5f5f5' }}
             />
           </Form.Item>
 

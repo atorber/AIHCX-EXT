@@ -423,7 +423,7 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
                 <strong>版本号:</strong> {selectedVersionInfo.versionName}
               </div>
               <div style={{ marginBottom: '2px' }}>
-                <strong>挂载路径:</strong> {selectedVersionInfo.mountPath}
+                <strong>默认挂载路径:</strong> {selectedVersionInfo.mountPath}
               </div>
               <div style={{ marginBottom: '2px' }}>
                 <strong>存储路径:</strong> {selectedVersionInfo.storagePath}

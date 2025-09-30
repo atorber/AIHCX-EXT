@@ -174,6 +174,24 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, taskName
           />
         </Form.Item>
 
+        {/* 模型格式 */}
+        <Form.Item 
+          name="modelFormat"
+          rules={[{ required: true, message: '请选择模型格式' }]}
+          style={{ marginBottom: '8px' }}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>模型格式 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+        >
+          <Select
+            placeholder="请选择模型格式"
+            value={config.modelFormat}
+            style={{ width: '100%', fontSize: '11px' }}
+          >
+            <Option value="HuggingFace">HuggingFace</Option>
+            <Option value="MegatronCore">MegatronCore</Option>
+            <Option value="ONNX">ONNX</Option>
+            <Option value="TensorRT">TensorRT</Option>
+          </Select>
+        </Form.Item>
 
         {/* 版本信息 */}
         <div style={{ 
@@ -207,28 +225,26 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, taskName
           {/* 存储桶 */}
           <Form.Item 
             name="storageBucket"
-            rules={[{ required: true, message: '请输入存储桶名称' }]}
             style={{ marginBottom: '8px' }}
-            label={<span style={{ fontSize: '11px', color: '#666' }}>存储桶 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-            extra={<span style={{ fontSize: '10px', color: '#999' }}>模型文件存储的BOS桶名称</span>}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>存储桶</span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>模型文件存储的BOS桶名称（自动填充）</span>}
           >
             <Input
-              placeholder="请输入存储桶名称"
-              style={{ fontSize: '11px' }}
+              disabled
+              style={{ fontSize: '11px', backgroundColor: '#f5f5f5' }}
             />
           </Form.Item>
 
           {/* 存储路径 */}
           <Form.Item 
             name="storagePath"
-            rules={[{ required: true, message: '请输入存储路径' }]}
             style={{ marginBottom: '8px' }}
-            label={<span style={{ fontSize: '11px', color: '#666' }}>存储路径 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-            extra={<span style={{ fontSize: '10px', color: '#999' }}>模型在存储桶中的路径</span>}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>存储路径</span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>模型在存储桶中的路径（自动填充）</span>}
           >
             <Input
-              placeholder="请输入存储路径，如：/models/my-model"
-              style={{ fontSize: '11px' }}
+              disabled
+              style={{ fontSize: '11px', backgroundColor: '#f5f5f5' }}
             />
           </Form.Item>
 
@@ -247,24 +263,6 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, taskName
           </Form.Item>
         </div>
 
-        {/* 模型格式 */}
-        <Form.Item 
-          name="modelFormat"
-          rules={[{ required: true, message: '请选择模型格式' }]}
-          style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>模型格式 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-        >
-          <Select
-            placeholder="请选择模型格式"
-            value={config.modelFormat}
-            style={{ width: '100%', fontSize: '11px' }}
-          >
-            <Option value="HuggingFace">HuggingFace</Option>
-            <Option value="MegatronCore">MegatronCore</Option>
-            <Option value="ONNX">ONNX</Option>
-            <Option value="TensorRT">TensorRT</Option>
-          </Select>
-        </Form.Item>
 
         {/* 错误提示 */}
         {error && (

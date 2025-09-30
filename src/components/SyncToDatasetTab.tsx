@@ -173,14 +173,13 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName
         {/* 存储实例 */}
         <Form.Item 
           name="storageInstance"
-          rules={[{ required: true, message: '请输入存储实例ID' }]}
           style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>存储实例ID <span style={{ color: '#ff4d4f' }}>*</span></span>}
-          extra={<span style={{ fontSize: '10px', color: '#999' }}>BOS存储桶名称</span>}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>存储实例ID</span>}
+          extra={<span style={{ fontSize: '10px', color: '#999' }}>BOS存储桶名称（自动填充）</span>}
         >
           <Input
-            placeholder="请输入BOS存储桶名称"
-            style={{ fontSize: '11px' }}
+            disabled
+            style={{ fontSize: '11px', backgroundColor: '#f5f5f5' }}
           />
         </Form.Item>
 
@@ -229,14 +228,13 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName
           {/* 存储路径 */}
           <Form.Item 
             name="storagePath"
-            rules={[{ required: true, message: '请输入存储路径' }]}
             style={{ marginBottom: '8px' }}
-            label={<span style={{ fontSize: '11px', color: '#666' }}>存储路径 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-            extra={<span style={{ fontSize: '10px', color: '#999' }}>数据在存储系统中的路径</span>}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>存储路径</span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>数据在存储系统中的路径（自动填充）</span>}
           >
             <Input
-              placeholder="请输入存储路径，如：/path/to/data"
-              style={{ fontSize: '11px' }}
+              disabled
+              style={{ fontSize: '11px', backgroundColor: '#f5f5f5' }}
             />
           </Form.Item>
 
@@ -245,7 +243,7 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName
             name="mountPath"
             rules={[{ required: true, message: '请输入挂载路径' }]}
             style={{ marginBottom: '0px' }}
-            label={<span style={{ fontSize: '11px', color: '#666' }}>挂载路径 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>默认挂载路径 <span style={{ color: '#ff4d4f' }}>*</span></span>}
             extra={<span style={{ fontSize: '10px', color: '#999' }}>数据在容器中的挂载路径</span>}
           >
             <Input
