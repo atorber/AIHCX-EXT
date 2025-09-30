@@ -149,6 +149,54 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName
           />
         </Form.Item>
 
+        {/* 存储类型 */}
+        <Form.Item 
+          name="storageType"
+          rules={[{ required: true, message: '请选择存储类型' }]}
+          style={{ marginBottom: '8px' }}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>存储类型 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+        >
+          <Select
+            placeholder="请选择存储类型"
+            value={config.storageType}
+            suffixIcon={<SettingOutlined />}
+            style={{ width: '100%', fontSize: '11px' }}
+          >
+            <Option value="PFS">PFS并行存储</Option>
+            <Option value="BOS">BOS对象存储</Option>
+          </Select>
+        </Form.Item>
+
+        {/* 存储实例 */}
+        <Form.Item 
+          name="storageInstance"
+          rules={[{ required: true, message: '请输入存储实例ID' }]}
+          style={{ marginBottom: '8px' }}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>存储实例ID <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          extra={<span style={{ fontSize: '10px', color: '#999' }}>PFS实例ID或BOS存储桶名称</span>}
+        >
+          <Input
+            placeholder="请输入存储实例ID"
+            style={{ fontSize: '11px' }}
+          />
+        </Form.Item>
+
+        {/* 导入格式 */}
+        <Form.Item 
+          name="importFormat"
+          rules={[{ required: true, message: '请选择导入格式' }]}
+          style={{ marginBottom: '8px' }}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>导入格式 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+        >
+          <Select
+            placeholder="请选择导入格式"
+            value={config.importFormat}
+            style={{ width: '100%', fontSize: '11px' }}
+          >
+            <Option value="FILE">文件</Option>
+            <Option value="FOLDER">文件夹</Option>
+          </Select>
+        </Form.Item>
 
         {/* 版本信息 */}
         <div style={{ 
@@ -207,55 +255,6 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName
             />
           </Form.Item>
         </div>
-
-        {/* 存储类型 */}
-        <Form.Item 
-          name="storageType"
-          rules={[{ required: true, message: '请选择存储类型' }]}
-          style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>存储类型 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-        >
-          <Select
-            placeholder="请选择存储类型"
-            value={config.storageType}
-            suffixIcon={<SettingOutlined />}
-            style={{ width: '100%', fontSize: '11px' }}
-          >
-            <Option value="PFS">PFS并行存储</Option>
-            <Option value="BOS">BOS对象存储</Option>
-          </Select>
-        </Form.Item>
-
-        {/* 存储实例 */}
-        <Form.Item 
-          name="storageInstance"
-          rules={[{ required: true, message: '请输入存储实例ID' }]}
-          style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>存储实例ID <span style={{ color: '#ff4d4f' }}>*</span></span>}
-          extra={<span style={{ fontSize: '10px', color: '#999' }}>PFS实例ID或BOS存储桶名称</span>}
-        >
-          <Input
-            placeholder="请输入存储实例ID"
-            style={{ fontSize: '11px' }}
-          />
-        </Form.Item>
-
-        {/* 导入格式 */}
-        <Form.Item 
-          name="importFormat"
-          rules={[{ required: true, message: '请选择导入格式' }]}
-          style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>导入格式 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-        >
-          <Select
-            placeholder="请选择导入格式"
-            value={config.importFormat}
-            style={{ width: '100%', fontSize: '11px' }}
-          >
-            <Option value="FILE">文件</Option>
-            <Option value="FOLDER">文件夹</Option>
-          </Select>
-        </Form.Item>
 
         {/* 错误提示 */}
         {error && (
