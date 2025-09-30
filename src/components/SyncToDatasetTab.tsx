@@ -282,7 +282,7 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName
             icon={<SendOutlined />}
             style={{ fontSize: '11px' }}
           >
-            提交创建任务
+            立即创建
           </Button>
           <Button 
             onClick={handleReset}

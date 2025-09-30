@@ -134,41 +134,43 @@ const DataDownloadTabs: React.FC<DataDownloadTabsProps> = ({
           />
         </TabPane>
 
-        <TabPane
-          key="registerModel"
-          tab={
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '3px',
-              padding: '1px 4px',
-              borderRadius: '3px',
-              minWidth: '50px',
-              justifyContent: 'center'
-            }}>
+        {category === 'MODEL' && (
+          <TabPane
+            key="registerModel"
+            tab={
               <div style={{ 
-                color: '#722ed1',
-                fontSize: '11px'
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '3px',
+                padding: '1px 4px',
+                borderRadius: '3px',
+                minWidth: '50px',
+                justifyContent: 'center'
               }}>
-                <RocketOutlined />
+                <div style={{ 
+                  color: '#722ed1',
+                  fontSize: '11px'
+                }}>
+                  <RocketOutlined />
+                </div>
+                <span style={{ 
+                  fontSize: '10px',
+                  fontWeight: 500,
+                  color: '#333'
+                }}>
+                  注册模型
+                </span>
               </div>
-              <span style={{ 
-                fontSize: '10px',
-                fontWeight: 500,
-                color: '#333'
-              }}>
-                注册模型
-              </span>
-            </div>
-          }
-        >
-          <RegisterModelTab
-            datasetId={datasetId}
-            taskName={taskName}
-            datasetStoragePath={datasetStoragePath}
-            onSubmit={onSubmitRegisterModel}
-          />
-        </TabPane>
+            }
+          >
+            <RegisterModelTab
+              datasetId={datasetId}
+              taskName={taskName}
+              datasetStoragePath={datasetStoragePath}
+              onSubmit={onSubmitRegisterModel}
+            />
+          </TabPane>
+        )}
       </Tabs>
     </div>
   );

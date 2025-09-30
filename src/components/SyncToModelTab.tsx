@@ -293,7 +293,7 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, taskName
             icon={<SendOutlined />}
             style={{ fontSize: '11px' }}
           >
-            提交注册任务
+            立即注册
           </Button>
           <Button 
             onClick={handleReset}
