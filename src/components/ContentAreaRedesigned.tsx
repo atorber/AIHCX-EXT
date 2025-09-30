@@ -194,6 +194,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({
             datasetId={taskParams.datasetId || ''}
             category={taskParams.category || ''}
             taskName={taskParams.name}
+            datasetStoragePath={taskParams.datasetStoragePath}
             onSubmitDataDump={_onSubmitDataDump}
             onSubmitCreateDataset={async (config) => {
               console.log('创建数据集:', config);

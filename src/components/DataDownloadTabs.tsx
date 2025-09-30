@@ -12,6 +12,7 @@ interface DataDownloadTabsProps {
   datasetId: string;
   category: string;
   taskName?: string;
+  datasetStoragePath?: string;
   onSubmitDataDump?: (config: DataDumpConfig) => Promise<void>;
   onSubmitCreateDataset?: (config: any) => Promise<void>;
   onSubmitRegisterModel?: (config: any) => Promise<void>;
@@ -21,6 +22,7 @@ const DataDownloadTabs: React.FC<DataDownloadTabsProps> = ({
   datasetId,
   category,
   taskName,
+  datasetStoragePath,
   onSubmitDataDump,
   onSubmitCreateDataset,
   onSubmitRegisterModel
@@ -31,6 +33,7 @@ const DataDownloadTabs: React.FC<DataDownloadTabsProps> = ({
     datasetId,
     category,
     taskName,
+    datasetStoragePath,
     hasOnSubmitDataDump: !!onSubmitDataDump,
     hasOnSubmitCreateDataset: !!onSubmitCreateDataset,
     hasOnSubmitRegisterModel: !!onSubmitRegisterModel
@@ -126,6 +129,7 @@ const DataDownloadTabs: React.FC<DataDownloadTabsProps> = ({
           <CreateDatasetTab
             datasetId={datasetId}
             taskName={taskName}
+            datasetStoragePath={datasetStoragePath}
             onSubmit={onSubmitCreateDataset}
           />
         </TabPane>
@@ -161,6 +165,7 @@ const DataDownloadTabs: React.FC<DataDownloadTabsProps> = ({
           <RegisterModelTab
             datasetId={datasetId}
             taskName={taskName}
+            datasetStoragePath={datasetStoragePath}
             onSubmit={onSubmitRegisterModel}
           />
         </TabPane>

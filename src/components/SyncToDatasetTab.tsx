@@ -1,57 +1,76 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Select, Input, Button, message, Alert } from 'antd';
-import { SendOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
+import { Form, Input, Button, message, Alert } from 'antd';
+import { SendOutlined, ReloadOutlined } from '@ant-design/icons';
 // 移除不需要的导入
-
-const { Option } = Select;
 const { TextArea } = Input;
 
 interface CreateDatasetTabProps {
   datasetId: string;
   taskName?: string;
+  datasetStoragePath?: string;
   onSubmit?: (config: any) => Promise<void>;
 }
 
-const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName, onSubmit }) => {
+const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName, datasetStoragePath, onSubmit }) => {
   const [form] = Form.useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   
   // 移除不需要的状态
   
-  // 表单配置
-  const [config, setConfig] = useState({
-    datasetName: '',
-    datasetDescription: '',
-    storageType: 'BOS' as 'PFS' | 'BOS',
-    storageInstance: '',
-    importFormat: 'FOLDER' as 'FILE' | 'FOLDER',
-    // initVersionEntry 字段
-    versionDescription: '',
-    storagePath: '',
-    mountPath: ''
-  });
+  // 表单配置已移除，使用Form的initialValues
 
-  // 当taskName变化时，更新表单的默认值
+  // 解析datasetStoragePath的函数
+  const parseStoragePath = (storagePath: string) => {
+    if (!storagePath) return { storageInstance: '', storagePath: '' };
+    
+    // 格式: "bos:/aihc-datasets/huggingface.co/datasets/nvidia/PhysicalAI-Robotics-GR00T-GR1"
+    // 提取存储实例ID: aihc-datasets (bos:/和第二个/之间的字符串)
+    // 提取存储路径: /huggingface.co/datasets/nvidia/PhysicalAI-Robotics-GR00T-GR1 (第二个/之后的字符串)
+    
+    const match = storagePath.match(/^bos:\/([^\/]+)\/(.+)$/);
+    if (match) {
+      return {
+        storageInstance: match[1], // aihc-datasets
+        storagePath: '/' + match[2] // /huggingface.co/datasets/nvidia/PhysicalAI-Robotics-GR00T-GR1
+      };
+    }
+    
+    return { storageInstance: '', storagePath: '' };
+  };
+
+  // 当taskName或datasetStoragePath变化时，更新表单的默认值
   useEffect(() => {
     console.log('[CreateDatasetTab] taskName 变化:', taskName);
+    console.log('[CreateDatasetTab] datasetStoragePath 变化:', datasetStoragePath);
+    
     if (taskName) {
       // 处理数据集名称：转换为小写，特殊字符替换为-
       const datasetName = taskName.toLowerCase().replace(/[^a-z0-9]/g, '-');
       const defaultDescription = `由数据下载任务 ${taskName} 导入创建`;
       
+      // 解析存储路径
+      const { storageInstance, storagePath } = parseStoragePath(datasetStoragePath || '');
+      
       console.log('[CreateDatasetTab] 设置默认值:', {
         datasetName,
-        defaultDescription
+        defaultDescription,
+        storageInstance,
+        storagePath
       });
       
       form.setFieldsValue({
         datasetName: datasetName,
         datasetDescription: defaultDescription,
-        versionDescription: defaultDescription
+        storageType: 'BOS',
+        storageInstance: storageInstance,
+        importFormat: 'FOLDER',
+        versionDescription: defaultDescription,
+        storagePath: storagePath,
+        mountPath: storagePath // 挂载路径默认与存储路径一致
       });
     }
-  }, [taskName, form]);
+  }, [taskName, datasetStoragePath, form]);
 
   const handleSubmit = async () => {
     try {
@@ -93,17 +112,6 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName
   const handleReset = () => {
     form.resetFields();
     setError('');
-    setConfig({
-      datasetName: '',
-      datasetDescription: '',
-      storageType: 'BOS',
-      storageInstance: '',
-      importFormat: 'FOLDER',
-      versionDescription: '',
-      storagePath: '',
-      mountPath: ''
-    });
-    // 移除不需要的状态重置
   };
 
   return (
@@ -152,19 +160,14 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName
         {/* 存储类型 */}
         <Form.Item 
           name="storageType"
-          rules={[{ required: true, message: '请选择存储类型' }]}
           style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>存储类型 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>存储类型</span>}
         >
-          <Select
-            placeholder="请选择存储类型"
-            value={config.storageType}
-            suffixIcon={<SettingOutlined />}
-            style={{ width: '100%', fontSize: '11px' }}
-          >
-            <Option value="PFS">PFS并行存储</Option>
-            <Option value="BOS">BOS对象存储</Option>
-          </Select>
+          <Input
+            value="BOS对象存储"
+            disabled
+            style={{ fontSize: '11px', backgroundColor: '#f5f5f5' }}
+          />
         </Form.Item>
 
         {/* 存储实例 */}
@@ -173,10 +176,10 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName
           rules={[{ required: true, message: '请输入存储实例ID' }]}
           style={{ marginBottom: '8px' }}
           label={<span style={{ fontSize: '11px', color: '#666' }}>存储实例ID <span style={{ color: '#ff4d4f' }}>*</span></span>}
-          extra={<span style={{ fontSize: '10px', color: '#999' }}>PFS实例ID或BOS存储桶名称</span>}
+          extra={<span style={{ fontSize: '10px', color: '#999' }}>BOS存储桶名称</span>}
         >
           <Input
-            placeholder="请输入存储实例ID"
+            placeholder="请输入BOS存储桶名称"
             style={{ fontSize: '11px' }}
           />
         </Form.Item>
@@ -184,18 +187,14 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName
         {/* 导入格式 */}
         <Form.Item 
           name="importFormat"
-          rules={[{ required: true, message: '请选择导入格式' }]}
           style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>导入格式 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>导入格式</span>}
         >
-          <Select
-            placeholder="请选择导入格式"
-            value={config.importFormat}
-            style={{ width: '100%', fontSize: '11px' }}
-          >
-            <Option value="FILE">文件</Option>
-            <Option value="FOLDER">文件夹</Option>
-          </Select>
+          <Input
+            value="文件夹"
+            disabled
+            style={{ fontSize: '11px', backgroundColor: '#f5f5f5' }}
+          />
         </Form.Item>
 
         {/* 版本信息 */}

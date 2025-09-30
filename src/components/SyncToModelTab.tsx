@@ -9,10 +9,11 @@ const { TextArea } = Input;
 interface RegisterModelTabProps {
   datasetId: string;
   taskName?: string;
+  datasetStoragePath?: string;
   onSubmit?: (config: any) => Promise<void>;
 }
 
-const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, taskName, onSubmit }) => {
+const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, taskName, datasetStoragePath, onSubmit }) => {
   const [form] = Form.useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -31,26 +32,54 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, taskName
     modelMetrics: ''
   });
 
-  // 当taskName变化时，更新表单的默认值
+  // 解析datasetStoragePath的函数
+  const parseStoragePath = (storagePath: string) => {
+    if (!storagePath) return { storageBucket: '', storagePath: '' };
+    
+    // 格式: "bos:/aihc-datasets/huggingface.co/datasets/nvidia/PhysicalAI-Robotics-GR00T-GR1"
+    // 提取存储桶: aihc-datasets (bos:/和第二个/之间的字符串)
+    // 提取存储路径: /huggingface.co/datasets/nvidia/PhysicalAI-Robotics-GR00T-GR1 (第二个/之后的字符串)
+    
+    const match = storagePath.match(/^bos:\/([^\/]+)\/(.+)$/);
+    if (match) {
+      return {
+        storageBucket: match[1], // aihc-datasets
+        storagePath: '/' + match[2] // /huggingface.co/datasets/nvidia/PhysicalAI-Robotics-GR00T-GR1
+      };
+    }
+    
+    return { storageBucket: '', storagePath: '' };
+  };
+
+  // 当taskName或datasetStoragePath变化时，更新表单的默认值
   useEffect(() => {
     console.log('[RegisterModelTab] taskName 变化:', taskName);
+    console.log('[RegisterModelTab] datasetStoragePath 变化:', datasetStoragePath);
+    
     if (taskName) {
       // 处理模型名称：转换为小写，特殊字符替换为-
       const modelName = taskName.toLowerCase().replace(/[^a-z0-9]/g, '-');
       const defaultDescription = `由数据下载任务 ${taskName} 导入创建`;
       
+      // 解析存储路径
+      const { storageBucket, storagePath } = parseStoragePath(datasetStoragePath || '');
+      
       console.log('[RegisterModelTab] 设置默认值:', {
         modelName,
-        defaultDescription
+        defaultDescription,
+        storageBucket,
+        storagePath
       });
       
       form.setFieldsValue({
         modelName: modelName,
         modelDescription: defaultDescription,
-        versionDescription: defaultDescription
+        versionDescription: defaultDescription,
+        storageBucket: storageBucket,
+        storagePath: storagePath
       });
     }
-  }, [taskName, form]);
+  }, [taskName, datasetStoragePath, form]);
 
   const handleSubmit = async () => {
     try {
