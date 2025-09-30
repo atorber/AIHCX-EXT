@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, Select, Input, Button, message, Alert, Spin } from 'antd';
-import { SendOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
-import { aihcApiService, ResourcePool, Queue } from '../services/aihcApi';
+import { SendOutlined, ReloadOutlined } from '@ant-design/icons';
+import { aihcApiService } from '../services/aihcApi';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -9,73 +9,52 @@ const { TextArea } = Input;
 interface DatasetRegisterModelFormProps {
   datasetId: string;
   datasetType?: string;
+  datasetName?: string;
+  storageInstance?: string;
+  latestVersionEntry?: any;
   onSubmit?: (config: any) => Promise<void>;
 }
 
-interface RequestManager {
-  datasetVersionsController: AbortController | null;
-  resourcePoolsController: AbortController | null;
-  queuesController: AbortController | null;
-  datasetVersionsSequence: number;
-  resourcePoolsSequence: number;
-  queuesSequence: number;
-  currentResourcePoolType: '自运维' | '全托管' | null;
-}
+// 移除RequestManager，简化组件
 
-const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({ datasetId, datasetType, onSubmit }) => {
+const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({ 
+  datasetId, 
+  datasetType, 
+  datasetName, 
+  storageInstance, 
+  latestVersionEntry, 
+  onSubmit 
+}) => {
   const [form] = Form.useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   
   // 加载状态
   const [isLoadingDatasetVersions, setIsLoadingDatasetVersions] = useState(false);
-  const [isLoadingResourcePools, setIsLoadingResourcePools] = useState(false);
-  const [isLoadingQueues, setIsLoadingQueues] = useState(false);
   
   // 选项数据
   const [datasetVersions, setDatasetVersions] = useState<any[]>([]);
-  const [resourcePools, setResourcePools] = useState<ResourcePool[]>([]);
-  const [queues, setQueues] = useState<Queue[]>([]);
   const [selectedVersionInfo, setSelectedVersionInfo] = useState<any>(null);
-  
-  // 请求管理器
-  const requestManagerRef = useRef<RequestManager>({
-    datasetVersionsController: null,
-    resourcePoolsController: null,
-    queuesController: null,
-    datasetVersionsSequence: 0,
-    resourcePoolsSequence: 0,
-    queuesSequence: 0,
-    currentResourcePoolType: null
-  });
 
   // 表单配置
   const [config, setConfig] = useState({
     datasetVersion: '',
     modelName: '',
     modelDescription: '',
-    resourcePoolType: '自运维' as '自运维' | '全托管',
-    resourcePoolId: '',
-    queueId: ''
+    modelFormat: 'PyTorch',
+    versionDescription: '',
+    storageBucket: '',
+    storagePath: '',
+    modelMetrics: ''
   });
 
   // 获取数据集版本
   const fetchDatasetVersions = async () => {
     if (!datasetId) return;
-    
-    const manager = requestManagerRef.current;
-    if (manager.datasetVersionsController) {
-      manager.datasetVersionsController.abort();
-    }
-    manager.datasetVersionsController = new AbortController();
-    manager.datasetVersionsSequence += 1;
-    const currentSequence = manager.datasetVersionsSequence;
 
     try {
       setIsLoadingDatasetVersions(true);
-      const versions = await aihcApiService.getDatasetVersions(datasetId, manager.datasetVersionsController);
-      
-      if (manager.datasetVersionsSequence !== currentSequence) return;
+      const versions = await aihcApiService.getDatasetVersions(datasetId);
       
       setDatasetVersions(versions);
       
@@ -87,123 +66,69 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({ dat
           datasetVersion: firstVersion.versionId
         }));
         setSelectedVersionInfo(firstVersion);
+        
+        // 设置数据集版本，并触发自动填充
         form.setFieldsValue({
-          datasetVersion: firstVersion.versionId,
-          modelName: '',
-          modelDescription: ''
+          datasetVersion: firstVersion.versionId
         });
+        
+        // 触发自动填充逻辑
+        triggerAutoFill();
       }
     } catch (err: any) {
-      if (err.name === 'AbortError') return;
       console.error('获取数据集版本失败:', err);
       message.error('获取数据集版本失败');
     } finally {
-      if (manager.datasetVersionsSequence === currentSequence) {
-        setIsLoadingDatasetVersions(false);
-      }
+      setIsLoadingDatasetVersions(false);
     }
   };
 
-  // 获取资源池
-  const fetchResourcePools = async (resourcePoolType: '自运维' | '全托管') => {
-    const manager = requestManagerRef.current;
-    if (manager.resourcePoolsController) {
-      manager.resourcePoolsController.abort();
-    }
-    manager.resourcePoolsController = new AbortController();
-    manager.resourcePoolsSequence += 1;
-    manager.currentResourcePoolType = resourcePoolType;
-    const currentSequence = manager.resourcePoolsSequence;
+  // 自动填充逻辑函数
+  const triggerAutoFill = () => {
+    console.log('[DatasetRegisterModelForm] 触发自动填充:', {
+      datasetName,
+      storageInstance,
+      latestVersionEntry
+    });
 
-    try {
-      setIsLoadingResourcePools(true);
-      let pools: ResourcePool[] = [];
+    if (datasetName || storageInstance || latestVersionEntry) {
+      // 模型名称直接使用数据集名称
+      const modelName = datasetName || '';
+      const defaultDescription = datasetName ? `由数据集 ${datasetName} 注册创建` : '';
       
-      if (resourcePoolType === '自运维') {
-        pools = await aihcApiService.getSelfManagedResourcePools(manager.resourcePoolsController);
-      } else {
-        pools = await aihcApiService.getFullyManagedResourcePools(manager.resourcePoolsController);
-      }
+      // 从latestVersionEntry获取存储路径
+      const storagePath = latestVersionEntry?.storagePath || '';
+      const mountPath = latestVersionEntry?.mountPath || '';
       
-      if (manager.resourcePoolsSequence !== currentSequence) return;
+      console.log('[DatasetRegisterModelForm] 设置默认值:', {
+        modelName,
+        defaultDescription,
+        storageInstance,
+        storagePath,
+        mountPath
+      });
       
-      setResourcePools(pools);
-      
-      // 自动选择第一个资源池
-      if (pools.length > 0) {
-        const firstPool = pools[0];
-        setConfig(currentConfig => ({
-          ...currentConfig,
-          resourcePoolId: firstPool.resourcePoolId
-        }));
-        form.setFieldsValue({
-          resourcePoolId: firstPool.resourcePoolId
-        });
-        
-        // 获取队列
-        await fetchQueues(firstPool.resourcePoolId);
-      }
-    } catch (err: any) {
-      if (err.name === 'AbortError') return;
-      console.error('获取资源池失败:', err);
-      message.error('获取资源池失败');
-    } finally {
-      if (manager.resourcePoolsSequence === currentSequence) {
-        setIsLoadingResourcePools(false);
-      }
+      form.setFieldsValue({
+        modelName: modelName,
+        modelDescription: defaultDescription,
+        versionDescription: defaultDescription,
+        storageBucket: storageInstance,
+        storagePath: storagePath
+      });
     }
   };
 
-  // 获取队列
-  const fetchQueues = async (resourcePoolId: string) => {
-    const manager = requestManagerRef.current;
-    if (manager.queuesController) {
-      manager.queuesController.abort();
-    }
-    manager.queuesController = new AbortController();
-    manager.queuesSequence += 1;
-    const currentSequence = manager.queuesSequence;
-
-    try {
-      setIsLoadingQueues(true);
-      let queueList: Queue[] = [];
-      
-      if (manager.currentResourcePoolType === '自运维') {
-        queueList = await aihcApiService.getSelfManagedQueues(resourcePoolId, manager.queuesController);
-      } else {
-        queueList = await aihcApiService.getFullyManagedQueues(manager.queuesController);
-      }
-      
-      if (manager.queuesSequence !== currentSequence) return;
-      
-      setQueues(queueList);
-      
-      // 自动选择第一个队列
-      if (queueList.length > 0) {
-        const firstQueue = queueList[0];
-        setConfig(currentConfig => ({
-          ...currentConfig,
-          queueId: firstQueue.queueId
-        }));
-        form.setFieldsValue({
-          queueId: firstQueue.queueId
-        });
-      }
-    } catch (err: any) {
-      if (err.name === 'AbortError') return;
-      console.error('获取队列失败:', err);
-      message.error('获取队列失败');
-    } finally {
-      if (manager.queuesSequence === currentSequence) {
-        setIsLoadingQueues(false);
-      }
-    }
-  };
+  // 移除资源池和队列相关函数，注册模型不需要这些参数
 
   // 初始化加载数据集版本
   useEffect(() => {
     fetchDatasetVersions();
   }, [datasetId]);
+
+  // 自动填充表单字段
+  useEffect(() => {
+    triggerAutoFill();
+  }, [datasetName, storageInstance, latestVersionEntry, form]);
 
   const handleSubmit = async () => {
     try {
@@ -216,9 +141,11 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({ dat
         datasetVersion: values.datasetVersion,
         modelName: values.modelName,
         modelDescription: values.modelDescription,
-        resourcePoolType: values.resourcePoolType,
-        resourcePoolId: values.resourcePoolId,
-        queueId: values.queueId
+        modelFormat: values.modelFormat,
+        versionDescription: values.versionDescription,
+        storageBucket: values.storageBucket,
+        storagePath: values.storagePath,
+        modelMetrics: values.modelMetrics
       };
 
       console.log('🚀 提交注册模型任务:', registerConfig);
@@ -248,12 +175,12 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({ dat
       datasetVersion: '',
       modelName: '',
       modelDescription: '',
-      resourcePoolType: '自运维',
-      resourcePoolId: '',
-      queueId: ''
+      modelFormat: 'PyTorch',
+      versionDescription: '',
+      storageBucket: '',
+      storagePath: '',
+      modelMetrics: ''
     });
-    setResourcePools([]);
-    setQueues([]);
     setSelectedVersionInfo(null);
   };
 
@@ -264,34 +191,7 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({ dat
     }
   };
 
-  const handleResourcePoolTypeChange = (value: '自运维' | '全托管') => {
-    setConfig(currentConfig => ({
-      ...currentConfig,
-      resourcePoolType: value,
-      resourcePoolId: '',
-      queueId: ''
-    }));
-    form.setFieldsValue({
-      resourcePoolId: '',
-      queueId: ''
-    });
-    setResourcePools([]);
-    setQueues([]);
-    fetchResourcePools(value);
-  };
-
-  const handleResourcePoolChange = (value: string) => {
-    setConfig(currentConfig => ({
-      ...currentConfig,
-      resourcePoolId: value,
-      queueId: ''
-    }));
-    form.setFieldsValue({
-      queueId: ''
-    });
-    setQueues([]);
-    fetchQueues(value);
-  };
+  // 移除资源池相关的事件处理函数
 
   // 检查数据集类型是否为BOS
   if (datasetType && datasetType !== 'BOS') {
@@ -317,9 +217,11 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({ dat
           datasetVersion: '',
           modelName: '',
           modelDescription: '',
-          resourcePoolType: '自运维',
-          resourcePoolId: '',
-          queueId: ''
+          modelFormat: 'PyTorch',
+          versionDescription: '',
+          storageBucket: '',
+          storagePath: '',
+          modelMetrics: ''
         }}
         style={{ margin: 0 }}
       >
@@ -408,71 +310,96 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({ dat
           />
         </Form.Item>
 
-        {/* 资源池类型 */}
+        {/* 模型格式 */}
         <Form.Item 
-          name="resourcePoolType"
-          rules={[{ required: true, message: '请选择资源池类型' }]}
+          name="modelFormat"
+          rules={[{ required: true, message: '请选择模型格式' }]}
           style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>资源池类型 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>模型格式 <span style={{ color: '#ff4d4f' }}>*</span></span>}
         >
           <Select
-            placeholder="请选择资源池类型"
-            value={config.resourcePoolType}
-            onChange={handleResourcePoolTypeChange}
-            suffixIcon={<SettingOutlined />}
+            placeholder="请选择模型格式"
+            value={config.modelFormat}
             style={{ width: '100%', fontSize: '11px' }}
           >
-            <Option value="自运维">自运维资源池</Option>
-            <Option value="全托管">全托管资源池</Option>
+            <Option value="PyTorch">PyTorch</Option>
+            <Option value="TensorFlow">TensorFlow</Option>
+            <Option value="ONNX">ONNX</Option>
+            <Option value="PaddlePaddle">PaddlePaddle</Option>
           </Select>
         </Form.Item>
 
-        {/* 资源池 */}
-        <Form.Item 
-          name="resourcePoolId"
-          rules={[{ required: true, message: '请选择资源池' }]}
-          style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>资源池 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-        >
-          <Select
-            placeholder="请选择资源池"
-            value={config.resourcePoolId}
-            loading={isLoadingResourcePools}
-            disabled={isLoadingResourcePools || !config.resourcePoolType}
-            notFoundContent={isLoadingResourcePools ? <Spin size="small" /> : '暂无数据'}
-            onChange={handleResourcePoolChange}
-            style={{ width: '100%', fontSize: '11px' }}
+        {/* 版本信息 */}
+        <div style={{ 
+          marginBottom: '8px', 
+          padding: '8px', 
+          background: '#f8f9fa', 
+          borderRadius: '4px',
+          border: '1px solid #e8e8e8'
+        }}>
+          <div style={{ 
+            fontSize: '11px', 
+            fontWeight: 'bold', 
+            color: '#333', 
+            marginBottom: '8px' 
+          }}>
+            初始版本信息
+          </div>
+          
+          {/* 版本描述 */}
+          <Form.Item 
+            name="versionDescription"
+            style={{ marginBottom: '8px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>版本描述</span>}
           >
-            {resourcePools.map((pool: ResourcePool) => (
-              <Option key={pool.resourcePoolId} value={pool.resourcePoolId}>
-                {pool.name} ({pool.phase})
-              </Option>
-            ))}
-          </Select>
-        </Form.Item>
+            <Input
+              placeholder="请输入版本描述"
+              style={{ fontSize: '11px' }}
+            />
+          </Form.Item>
 
-        {/* 队列 */}
-        <Form.Item 
-          name="queueId"
-          rules={[{ required: true, message: '请选择队列' }]}
-          style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>队列 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-        >
-          <Select
-            placeholder="请选择队列"
-            value={config.queueId}
-            loading={isLoadingQueues}
-            disabled={isLoadingQueues || !config.resourcePoolId}
-            notFoundContent={isLoadingQueues ? <Spin size="small" /> : '暂无数据'}
-            style={{ width: '100%', fontSize: '11px' }}
+          {/* 存储桶 */}
+          <Form.Item 
+            name="storageBucket"
+            rules={[{ required: true, message: '请输入存储桶' }]}
+            style={{ marginBottom: '8px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>存储桶 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>BOS存储桶名称</span>}
           >
-            {queues.map((queue: Queue) => (
-              <Option key={queue.queueId} value={queue.queueId}>
-                {queue.queueName} ({queue.phase})
-              </Option>
-            ))}
-          </Select>
-        </Form.Item>
+            <Input
+              placeholder="请输入存储桶名称"
+              style={{ fontSize: '11px' }}
+            />
+          </Form.Item>
+
+          {/* 存储路径 */}
+          <Form.Item 
+            name="storagePath"
+            rules={[{ required: true, message: '请输入存储路径' }]}
+            style={{ marginBottom: '8px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>存储路径 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>模型在存储系统中的路径</span>}
+          >
+            <Input
+              placeholder="请输入存储路径，如：/path/to/model"
+              style={{ fontSize: '11px' }}
+            />
+          </Form.Item>
+
+          {/* 模型指标 */}
+          <Form.Item 
+            name="modelMetrics"
+            style={{ marginBottom: '0px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>模型指标</span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>模型的性能指标信息（JSON格式）</span>}
+          >
+            <TextArea
+              placeholder='请输入模型指标，如：{"accuracy": 0.95, "precision": 0.92}'
+              rows={2}
+              style={{ fontSize: '11px', resize: 'vertical' }}
+            />
+          </Form.Item>
+        </div>
 
         {/* 错误提示 */}
         {error && (

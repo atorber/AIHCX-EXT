@@ -407,9 +407,12 @@ const ContentArea: React.FC<ContentAreaProps> = ({
               <DatasetRegisterModelForm
                 datasetId={taskParams.datasetId || ''}
                 datasetType={taskParams.datasetType}
+                datasetName={taskParams.datasetName}
+                storageInstance={taskParams.storageInstance}
+                latestVersionEntry={taskParams.latestVersionEntry}
                 onSubmit={async (config) => {
                   console.log('注册模型:', config);
-                  // 这里可以调用实际的注册模型API
+                  await handleRegisterModel(config);
                 }}
               />
             </div>

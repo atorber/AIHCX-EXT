@@ -38,6 +38,9 @@ export interface TaskParams {
   category?: string;
   datasetType?: string; // 数据集类型，如 'BOS', 'PFS' 等
   datasetStoragePath?: string; // 数据集存储路径，如 "bos:/aihc-datasets/huggingface.co/datasets/nvidia/PhysicalAI-Robotics-GR00T-GR1"
+  datasetName?: string; // 数据集名称
+  storageInstance?: string; // 存储实例ID
+  latestVersionEntry?: any; // 最新版本信息
 }
 
 export interface Message {
