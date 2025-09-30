@@ -5,7 +5,7 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [0.7.0] - 2025-01-27
+## [0.7.0] - 2025-09-30
 
 ### 新增
 - 新增数据下载任务详情页面多标签功能：数据转储、创建数据集、注册模型
