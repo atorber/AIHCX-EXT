@@ -32,13 +32,21 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName
     mountPath: ''
   });
 
-  // 当taskName变化时，更新表单的默认描述
+  // 当taskName变化时，更新表单的默认值
   useEffect(() => {
     console.log('[CreateDatasetTab] taskName 变化:', taskName);
     if (taskName) {
+      // 处理数据集名称：转换为小写，特殊字符替换为-
+      const datasetName = taskName.toLowerCase().replace(/[^a-z0-9]/g, '-');
       const defaultDescription = `由数据下载任务 ${taskName} 导入创建`;
-      console.log('[CreateDatasetTab] 设置默认描述:', defaultDescription);
+      
+      console.log('[CreateDatasetTab] 设置默认值:', {
+        datasetName,
+        defaultDescription
+      });
+      
       form.setFieldsValue({
+        datasetName: datasetName,
         datasetDescription: defaultDescription,
         versionDescription: defaultDescription
       });

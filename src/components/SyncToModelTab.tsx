@@ -31,13 +31,21 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, taskName
     modelMetrics: ''
   });
 
-  // 当taskName变化时，更新表单的默认描述
+  // 当taskName变化时，更新表单的默认值
   useEffect(() => {
     console.log('[RegisterModelTab] taskName 变化:', taskName);
     if (taskName) {
+      // 处理模型名称：转换为小写，特殊字符替换为-
+      const modelName = taskName.toLowerCase().replace(/[^a-z0-9]/g, '-');
       const defaultDescription = `由数据下载任务 ${taskName} 导入创建`;
-      console.log('[RegisterModelTab] 设置默认描述:', defaultDescription);
+      
+      console.log('[RegisterModelTab] 设置默认值:', {
+        modelName,
+        defaultDescription
+      });
+      
       form.setFieldsValue({
+        modelName: modelName,
         modelDescription: defaultDescription,
         versionDescription: defaultDescription
       });
