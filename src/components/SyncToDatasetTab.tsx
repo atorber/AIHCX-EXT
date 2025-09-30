@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Form, Select, Input, Button, message, Alert, Spin } from 'antd';
+import { Form, Select, Input, Button, message, Alert } from 'antd';
 import { SendOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
-import { ResourcePool, Queue } from '../services/aihcApi';
+// 移除不需要的导入
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -16,22 +16,19 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, onSubmit
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   
-  // 加载状态
-  const [isLoadingResourcePools] = useState(false);
-  const [isLoadingQueues] = useState(false);
-  
-  // 选项数据
-  const [resourcePools, setResourcePools] = useState<ResourcePool[]>([]);
-  const [queues, setQueues] = useState<Queue[]>([]);
+  // 移除不需要的状态
   
   // 表单配置
   const [config, setConfig] = useState({
     datasetName: '',
     datasetDescription: '',
-    resourcePoolType: '自运维' as '自运维' | '全托管',
-    resourcePoolId: '',
-    queueId: '',
-    sourcePath: ''
+    storageType: 'BOS' as 'PFS' | 'BOS',
+    storageInstance: '',
+    importFormat: 'FOLDER' as 'FILE' | 'FOLDER',
+    // initVersionEntry 字段
+    versionDescription: '',
+    storagePath: '',
+    mountPath: ''
   });
 
   const handleSubmit = async () => {
@@ -44,21 +41,22 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, onSubmit
         sourceDatasetId: datasetId,
         datasetName: values.datasetName,
         datasetDescription: values.datasetDescription,
-        resourcePoolType: values.resourcePoolType,
-        resourcePoolId: values.resourcePoolId,
-        queueId: values.queueId,
-        sourcePath: values.sourcePath
+        storageType: values.storageType,
+        storageInstance: values.storageInstance,
+        importFormat: values.importFormat,
+        // initVersionEntry 字段
+        versionDescription: values.versionDescription,
+        storagePath: values.storagePath,
+        mountPath: values.mountPath
       };
 
       console.log('🚀 提交创建数据集任务:', createConfig);
 
-      // 这里应该调用实际的同步API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      message.success('创建数据集任务已创建成功');
-      
       if (onSubmit) {
         await onSubmit(createConfig);
+        message.success('创建数据集任务已创建成功');
+      } else {
+        throw new Error('未配置创建数据集处理函数');
       }
       
     } catch (err) {
@@ -76,13 +74,14 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, onSubmit
     setConfig({
       datasetName: '',
       datasetDescription: '',
-      resourcePoolType: '自运维',
-      resourcePoolId: '',
-      queueId: '',
-      sourcePath: ''
+      storageType: 'BOS',
+      storageInstance: '',
+      importFormat: 'FOLDER',
+      versionDescription: '',
+      storagePath: '',
+      mountPath: ''
     });
-    setResourcePools([]);
-    setQueues([]);
+    // 移除不需要的状态重置
   };
 
   return (
@@ -93,10 +92,12 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, onSubmit
         initialValues={{
           datasetName: '',
           datasetDescription: '',
-          resourcePoolType: '自运维',
-          resourcePoolId: '',
-          queueId: '',
-          sourcePath: ''
+          storageType: 'BOS',
+          storageInstance: '',
+          importFormat: 'FOLDER',
+          versionDescription: '',
+          storagePath: '',
+          mountPath: ''
         }}
         style={{ margin: 0 }}
       >
@@ -126,82 +127,111 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, onSubmit
           />
         </Form.Item>
 
-        {/* 源数据路径 */}
-        <Form.Item 
-          name="sourcePath"
-          rules={[{ required: true, message: '请输入源数据路径' }]}
-          style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>源数据路径 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-          extra={<span style={{ fontSize: '10px', color: '#999' }}>指定要创建数据集的数据路径</span>}
-        >
-          <TextArea
-            placeholder="请输入源数据路径"
-            rows={3}
-            style={{ fontSize: '11px', resize: 'vertical' }}
-          />
-        </Form.Item>
 
-        {/* 资源池类型 */}
+        {/* 版本信息 */}
+        <div style={{ 
+          marginBottom: '8px', 
+          padding: '8px', 
+          background: '#f8f9fa', 
+          borderRadius: '4px',
+          border: '1px solid #e8e8e8'
+        }}>
+          <div style={{ 
+            fontSize: '11px', 
+            fontWeight: 'bold', 
+            color: '#333', 
+            marginBottom: '8px' 
+          }}>
+            初始版本信息
+          </div>
+          
+          {/* 版本描述 */}
+          <Form.Item 
+            name="versionDescription"
+            style={{ marginBottom: '8px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>版本描述</span>}
+          >
+            <Input
+              placeholder="请输入版本描述"
+              style={{ fontSize: '11px' }}
+            />
+          </Form.Item>
+
+          {/* 存储路径 */}
+          <Form.Item 
+            name="storagePath"
+            rules={[{ required: true, message: '请输入存储路径' }]}
+            style={{ marginBottom: '8px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>存储路径 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>数据在存储系统中的路径</span>}
+          >
+            <Input
+              placeholder="请输入存储路径，如：/path/to/data"
+              style={{ fontSize: '11px' }}
+            />
+          </Form.Item>
+
+          {/* 挂载路径 */}
+          <Form.Item 
+            name="mountPath"
+            rules={[{ required: true, message: '请输入挂载路径' }]}
+            style={{ marginBottom: '0px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>挂载路径 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>数据在容器中的挂载路径</span>}
+          >
+            <Input
+              placeholder="请输入挂载路径，如：/mnt/datasets/name"
+              style={{ fontSize: '11px' }}
+            />
+          </Form.Item>
+        </div>
+
+        {/* 存储类型 */}
         <Form.Item 
-          name="resourcePoolType"
-          rules={[{ required: true, message: '请选择资源池类型' }]}
+          name="storageType"
+          rules={[{ required: true, message: '请选择存储类型' }]}
           style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>资源池类型 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>存储类型 <span style={{ color: '#ff4d4f' }}>*</span></span>}
         >
           <Select
-            placeholder="请选择资源池类型"
-            value={config.resourcePoolType}
+            placeholder="请选择存储类型"
+            value={config.storageType}
             suffixIcon={<SettingOutlined />}
             style={{ width: '100%', fontSize: '11px' }}
           >
-            <Option value="自运维">自运维资源池</Option>
-            <Option value="全托管">全托管资源池</Option>
+            <Option value="PFS">PFS并行存储</Option>
+            <Option value="BOS">BOS对象存储</Option>
           </Select>
         </Form.Item>
 
-        {/* 资源池 */}
+        {/* 存储实例 */}
         <Form.Item 
-          name="resourcePoolId"
-          rules={[{ required: true, message: '请选择资源池' }]}
+          name="storageInstance"
+          rules={[{ required: true, message: '请输入存储实例ID' }]}
           style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>资源池 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>存储实例ID <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          extra={<span style={{ fontSize: '10px', color: '#999' }}>PFS实例ID或BOS存储桶名称</span>}
         >
-          <Select
-            placeholder="请选择资源池"
-            value={config.resourcePoolId}
-            loading={isLoadingResourcePools}
-            disabled={isLoadingResourcePools || !config.resourcePoolType}
-            notFoundContent={isLoadingResourcePools ? <Spin size="small" /> : '暂无数据'}
-            style={{ width: '100%', fontSize: '11px' }}
-          >
-            {resourcePools.map((pool: ResourcePool) => (
-              <Option key={pool.resourcePoolId} value={pool.resourcePoolId}>
-                {pool.name} ({pool.phase})
-              </Option>
-            ))}
-          </Select>
+          <Input
+            placeholder="请输入存储实例ID"
+            style={{ fontSize: '11px' }}
+          />
         </Form.Item>
 
-        {/* 队列 */}
+        {/* 导入格式 */}
         <Form.Item 
-          name="queueId"
-          rules={[{ required: true, message: '请选择队列' }]}
+          name="importFormat"
+          rules={[{ required: true, message: '请选择导入格式' }]}
           style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>队列 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>导入格式 <span style={{ color: '#ff4d4f' }}>*</span></span>}
         >
           <Select
-            placeholder="请选择队列"
-            value={config.queueId}
-            loading={isLoadingQueues}
-            disabled={isLoadingQueues || !config.resourcePoolId}
-            notFoundContent={isLoadingQueues ? <Spin size="small" /> : '暂无数据'}
+            placeholder="请选择导入格式"
+            value={config.importFormat}
             style={{ width: '100%', fontSize: '11px' }}
           >
-            {queues.map((queue: Queue) => (
-              <Option key={queue.queueId} value={queue.queueId}>
-                {queue.queueName} ({queue.phase})
-              </Option>
-            ))}
+            <Option value="FILE">文件</Option>
+            <Option value="FOLDER">文件夹</Option>
           </Select>
         </Form.Item>
 

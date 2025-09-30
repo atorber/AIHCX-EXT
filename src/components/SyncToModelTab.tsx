@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Form, Select, Input, Button, message, Alert, Spin } from 'antd';
-import { SendOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
-import { ResourcePool, Queue } from '../services/aihcApi';
+import { Form, Select, Input, Button, message, Alert } from 'antd';
+import { SendOutlined, ReloadOutlined } from '@ant-design/icons';
+// 移除不需要的导入
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -16,22 +16,18 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, onSubmit
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   
-  // 加载状态
-  const [isLoadingResourcePools] = useState(false);
-  const [isLoadingQueues] = useState(false);
-  
-  // 选项数据
-  const [resourcePools, setResourcePools] = useState<ResourcePool[]>([]);
-  const [queues, setQueues] = useState<Queue[]>([]);
+  // 移除不需要的状态
   
   // 表单配置
   const [config, setConfig] = useState({
     modelName: '',
     modelDescription: '',
-    resourcePoolType: '自运维' as '自运维' | '全托管',
-    resourcePoolId: '',
-    queueId: '',
-    sourcePath: ''
+    modelFormat: 'HuggingFace',
+    // initVersionEntry 字段
+    versionDescription: '',
+    storageBucket: '',
+    storagePath: '',
+    modelMetrics: ''
   });
 
   const handleSubmit = async () => {
@@ -44,21 +40,21 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, onSubmit
         sourceDatasetId: datasetId,
         modelName: values.modelName,
         modelDescription: values.modelDescription,
-        resourcePoolType: values.resourcePoolType,
-        resourcePoolId: values.resourcePoolId,
-        queueId: values.queueId,
-        sourcePath: values.sourcePath
+        modelFormat: values.modelFormat,
+        // initVersionEntry 字段
+        versionDescription: values.versionDescription,
+        storageBucket: values.storageBucket,
+        storagePath: values.storagePath,
+        modelMetrics: values.modelMetrics
       };
 
       console.log('🚀 提交注册模型任务:', createConfig);
 
-      // 这里应该调用实际的同步API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      message.success('注册模型任务已创建成功');
-      
       if (onSubmit) {
         await onSubmit(createConfig);
+        message.success('注册模型任务已创建成功');
+      } else {
+        throw new Error('未配置注册模型处理函数');
       }
       
     } catch (err) {
@@ -76,13 +72,13 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, onSubmit
     setConfig({
       modelName: '',
       modelDescription: '',
-      resourcePoolType: '自运维',
-      resourcePoolId: '',
-      queueId: '',
-      sourcePath: ''
+      modelFormat: 'HuggingFace',
+      versionDescription: '',
+      storageBucket: '',
+      storagePath: '',
+      modelMetrics: ''
     });
-    setResourcePools([]);
-    setQueues([]);
+    // 移除不需要的状态重置
   };
 
   return (
@@ -93,10 +89,11 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, onSubmit
         initialValues={{
           modelName: '',
           modelDescription: '',
-          resourcePoolType: '自运维',
-          resourcePoolId: '',
-          queueId: '',
-          sourcePath: ''
+          modelFormat: 'HuggingFace',
+          versionDescription: '',
+          storageBucket: '',
+          storagePath: '',
+          modelMetrics: ''
         }}
         style={{ margin: 0 }}
       >
@@ -126,82 +123,95 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, onSubmit
           />
         </Form.Item>
 
-        {/* 源数据路径 */}
-        <Form.Item 
-          name="sourcePath"
-          rules={[{ required: true, message: '请输入源数据路径' }]}
-          style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>源数据路径 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-          extra={<span style={{ fontSize: '10px', color: '#999' }}>指定要注册模型的数据路径</span>}
-        >
-          <TextArea
-            placeholder="请输入源数据路径"
-            rows={3}
-            style={{ fontSize: '11px', resize: 'vertical' }}
-          />
-        </Form.Item>
 
-        {/* 资源池类型 */}
+        {/* 版本信息 */}
+        <div style={{ 
+          marginBottom: '8px', 
+          padding: '8px', 
+          background: '#f8f9fa', 
+          borderRadius: '4px',
+          border: '1px solid #e8e8e8'
+        }}>
+          <div style={{ 
+            fontSize: '11px', 
+            fontWeight: 'bold', 
+            color: '#333', 
+            marginBottom: '8px' 
+          }}>
+            初始版本信息
+          </div>
+          
+          {/* 版本描述 */}
+          <Form.Item 
+            name="versionDescription"
+            style={{ marginBottom: '8px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>版本描述</span>}
+          >
+            <Input
+              placeholder="请输入版本描述"
+              style={{ fontSize: '11px' }}
+            />
+          </Form.Item>
+
+          {/* 存储桶 */}
+          <Form.Item 
+            name="storageBucket"
+            rules={[{ required: true, message: '请输入存储桶名称' }]}
+            style={{ marginBottom: '8px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>存储桶 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>模型文件存储的BOS桶名称</span>}
+          >
+            <Input
+              placeholder="请输入存储桶名称"
+              style={{ fontSize: '11px' }}
+            />
+          </Form.Item>
+
+          {/* 存储路径 */}
+          <Form.Item 
+            name="storagePath"
+            rules={[{ required: true, message: '请输入存储路径' }]}
+            style={{ marginBottom: '8px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>存储路径 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>模型在存储桶中的路径</span>}
+          >
+            <Input
+              placeholder="请输入存储路径，如：/models/my-model"
+              style={{ fontSize: '11px' }}
+            />
+          </Form.Item>
+
+          {/* 模型指标 */}
+          <Form.Item 
+            name="modelMetrics"
+            style={{ marginBottom: '0px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>模型指标</span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>JSON格式的模型性能指标（可选）</span>}
+          >
+            <TextArea
+              placeholder='请输入JSON格式的模型指标，如：{"loss": 0.1, "accuracy": 0.95}'
+              rows={2}
+              style={{ fontSize: '11px', resize: 'vertical' }}
+            />
+          </Form.Item>
+        </div>
+
+        {/* 模型格式 */}
         <Form.Item 
-          name="resourcePoolType"
-          rules={[{ required: true, message: '请选择资源池类型' }]}
+          name="modelFormat"
+          rules={[{ required: true, message: '请选择模型格式' }]}
           style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>资源池类型 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>模型格式 <span style={{ color: '#ff4d4f' }}>*</span></span>}
         >
           <Select
-            placeholder="请选择资源池类型"
-            value={config.resourcePoolType}
-            suffixIcon={<SettingOutlined />}
+            placeholder="请选择模型格式"
+            value={config.modelFormat}
             style={{ width: '100%', fontSize: '11px' }}
           >
-            <Option value="自运维">自运维资源池</Option>
-            <Option value="全托管">全托管资源池</Option>
-          </Select>
-        </Form.Item>
-
-        {/* 资源池 */}
-        <Form.Item 
-          name="resourcePoolId"
-          rules={[{ required: true, message: '请选择资源池' }]}
-          style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>资源池 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-        >
-          <Select
-            placeholder="请选择资源池"
-            value={config.resourcePoolId}
-            loading={isLoadingResourcePools}
-            disabled={isLoadingResourcePools || !config.resourcePoolType}
-            notFoundContent={isLoadingResourcePools ? <Spin size="small" /> : '暂无数据'}
-            style={{ width: '100%', fontSize: '11px' }}
-          >
-            {resourcePools.map((pool: ResourcePool) => (
-              <Option key={pool.resourcePoolId} value={pool.resourcePoolId}>
-                {pool.name} ({pool.phase})
-              </Option>
-            ))}
-          </Select>
-        </Form.Item>
-
-        {/* 队列 */}
-        <Form.Item 
-          name="queueId"
-          rules={[{ required: true, message: '请选择队列' }]}
-          style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>队列 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-        >
-          <Select
-            placeholder="请选择队列"
-            value={config.queueId}
-            loading={isLoadingQueues}
-            disabled={isLoadingQueues || !config.resourcePoolId}
-            notFoundContent={isLoadingQueues ? <Spin size="small" /> : '暂无数据'}
-            style={{ width: '100%', fontSize: '11px' }}
-          >
-            {queues.map((queue: Queue) => (
-              <Option key={queue.queueId} value={queue.queueId}>
-                {queue.queueName} ({queue.phase})
-              </Option>
-            ))}
+            <Option value="HuggingFace">HuggingFace</Option>
+            <Option value="MegatronCore">MegatronCore</Option>
+            <Option value="ONNX">ONNX</Option>
+            <Option value="TensorRT">TensorRT</Option>
           </Select>
         </Form.Item>
 

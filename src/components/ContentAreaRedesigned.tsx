@@ -20,6 +20,7 @@ import DataImportForm from './DataImportForm';
 import ModelDeploymentForm from './ModelDeploymentForm';
 import DataDownloadTabs from './DataDownloadTabs';
 import DatasetRegisterModelForm from './DatasetRegisterModelForm';
+import { BceAihc } from '../utils/sdk/aihc';
 
 const { Text } = Typography;
 
@@ -46,6 +47,101 @@ const ContentArea: React.FC<ContentAreaProps> = ({
   onSubmitDataImport: _onSubmitDataImport,
   onSubmitModelDeployment: _onSubmitModelDeployment
 }) => {
+  // 获取配置信息
+  const getConfig = async () => {
+    return new Promise<any>((resolve) => {
+      chrome.storage.local.get(['aihc-config'], (result) => {
+        const config = result['aihc-config'] || {};
+        resolve({
+          ak: config.ak || '',
+          sk: config.sk || '',
+          host: config.host || 'aihc.bj.baidubce.com'
+        });
+      });
+    });
+  };
+
+  // 处理创建数据集
+  const handleCreateDataset = async (config: any) => {
+    try {
+      const { ak, sk, host } = await getConfig();
+      if (!ak || !sk) {
+        throw new Error('请先配置AK/SK');
+      }
+
+      const bceAihc = new BceAihc(ak, sk, host);
+      
+      // 构建创建数据集的参数
+      const createDatasetParams = {
+        name: config.datasetName,
+        description: config.datasetDescription || '',
+        storageType: config.storageType as 'PFS' | 'BOS',
+        storageInstance: config.storageInstance,
+        importFormat: config.importFormat as 'FILE' | 'FOLDER',
+        visibilityScope: 'ONLY_OWNER' as 'ALL_PEOPLE' | 'ONLY_OWNER' | 'USER_GROUP',
+        initVersionEntry: {
+          description: config.versionDescription || config.datasetDescription || '',
+          storagePath: config.storagePath,
+          mountPath: config.mountPath
+        }
+      };
+
+      console.log('🚀 调用创建数据集API:', createDatasetParams);
+      const result = await bceAihc.CreateDataset(createDatasetParams);
+      
+      if (result.error) {
+        throw new Error(result.message || '创建数据集失败');
+      }
+
+      console.log('✅ 创建数据集成功:', result);
+      // 这里可以显示成功消息或跳转
+      
+    } catch (error) {
+      console.error('❌ 创建数据集失败:', error);
+      throw error;
+    }
+  };
+
+  // 处理注册模型
+  const handleRegisterModel = async (config: any) => {
+    try {
+      const { ak, sk, host } = await getConfig();
+      if (!ak || !sk) {
+        throw new Error('请先配置AK/SK');
+      }
+
+      const bceAihc = new BceAihc(ak, sk, host);
+      
+      // 构建创建模型的参数
+      const createModelParams = {
+        name: config.modelName,
+        description: config.modelDescription || '',
+        modelFormat: config.modelFormat,
+        visibilityScope: 'ONLY_OWNER' as 'ONLY_OWNER',
+        initVersionEntry: {
+          source: 'UserUpload',
+          storageBucket: config.storageBucket,
+          storagePath: config.storagePath,
+          modelMetrics: config.modelMetrics || undefined,
+          description: config.versionDescription || config.modelDescription || ''
+        }
+      };
+
+      console.log('🚀 调用创建模型API:', createModelParams);
+      const result = await bceAihc.CreateModel(createModelParams);
+      
+      if (result.error) {
+        throw new Error(result.message || '注册模型失败');
+      }
+
+      console.log('✅ 注册模型成功:', result);
+      // 这里可以显示成功消息或跳转
+      
+    } catch (error) {
+      console.error('❌ 注册模型失败:', error);
+      throw error;
+    }
+  };
   // 如果是数据下载页面，直接显示输入框
   if (taskParams.isDataDownloadPage) {
     return (
@@ -99,11 +195,11 @@ const ContentArea: React.FC<ContentAreaProps> = ({
             onSubmitDataDump={_onSubmitDataDump}
             onSubmitCreateDataset={async (config) => {
               console.log('创建数据集:', config);
-              // 这里可以调用实际的创建数据集API
+              await handleCreateDataset(config);
             }}
             onSubmitRegisterModel={async (config) => {
               console.log('注册模型:', config);
-              // 这里可以调用实际的注册模型API
+              await handleRegisterModel(config);
             }}
           />
         </div>
