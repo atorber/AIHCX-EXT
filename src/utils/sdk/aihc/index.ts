@@ -304,6 +304,76 @@ class BceAihc {
         }, {}, this.v2Headers);
     };
 
+    // ==================== 在线服务部署相关接口 ====================
+
+    /**
+     * 创建在线服务
+     * @param serviceConf 服务配置
+     * @param clientToken 客户端令牌（可选，用于保证请求幂等性）
+     */
+    CreateService = async (serviceConf: {
+        name: string;
+        resourcePool: {
+            resourcePoolId: string;
+            resourcePoolName?: string;
+            queueName?: string;
+            resourcePoolType?: string;
+        };
+        containers: Array<{
+            name: string;
+            cpus: number;
+            memory: number;
+            acceleratorCount?: number;
+            command?: string[];
+            ports?: Array<{
+                name: string;
+                port: number;
+            }>;
+            envs?: Record<string, string>;
+            image: {
+                imageType: number;
+                imageUrl: string;
+            };
+            volumeMounts?: any[];
+            startupsProbe?: any;
+            readinessProbe?: any;
+            livenessProbe?: any;
+        }>;
+        instanceCount?: number;
+        acceleratorType?: string;
+        workloadType?: string;
+        log?: {
+            persistent?: boolean;
+        };
+        misc?: {
+            podAnnotations?: Record<string, string>;
+            podLabels?: Record<string, string>;
+            gracePeriodSec?: number;
+            fedPodsPerIns?: number;
+        };
+        deploy?: {
+            schedule?: {
+                priority?: string;
+            };
+            canaryStrategy?: {
+                maxSurge?: number;
+                maxUnavailable?: number;
+            };
+        };
+        access?: {
+            publicAccess?: boolean;
+            networkType?: string;
+            aiGateway?: {
+                enableAuth?: boolean;
+            };
+        };
+    }, clientToken?: string) => {
+        return this.requestBecOpenApi('/', 'POST', {
+            action: 'CreateService',
+            ...(clientToken && { clientToken })
+        }, serviceConf, this.v2Headers);
+    };
+
 }
 
 export { BceAihc };
