@@ -21,6 +21,7 @@ import ModelDeploymentForm from './ModelDeploymentForm';
 import DataDownloadTabs from './DataDownloadTabs';
 import DatasetRegisterModelForm from './DatasetRegisterModelForm';
 import { BceAihc } from '../utils/sdk/aihc';
+import { getActiveConfigProfile, getPluginConfig } from '../utils/config';
 
 const { Text } = Typography;
 
@@ -49,16 +50,32 @@ const ContentArea: React.FC<ContentAreaProps> = ({
 }) => {
   // 获取配置信息
   const getConfig = async () => {
-    return new Promise<any>((resolve) => {
-      chrome.storage.local.get(['aihc-config'], (result) => {
-        const config = result['aihc-config'] || {};
-        resolve({
-          ak: config.ak || '',
-          sk: config.sk || '',
-          host: config.host || 'aihc.bj.baidubce.com'
-        });
-      });
-    });
+    try {
+      // 首先尝试获取多配置管理器中的活跃配置
+      const activeProfile = await getActiveConfigProfile();
+      if (activeProfile) {
+        return {
+          ak: activeProfile.ak,
+          sk: activeProfile.sk,
+          host: activeProfile.host
+        };
+      }
+      
+      // 如果没有活跃配置，回退到单配置模式
+      const pluginConfig = await getPluginConfig();
+      return {
+        ak: pluginConfig.ak,
+        sk: pluginConfig.sk,
+        host: pluginConfig.host
+      };
+    } catch (error) {
+      console.error('获取配置失败:', error);
+      return {
+        ak: '',
+        sk: '',
+        host: 'aihc.bj.baidubce.com'
+      };
+    }
   };
 
   // 处理创建数据集
