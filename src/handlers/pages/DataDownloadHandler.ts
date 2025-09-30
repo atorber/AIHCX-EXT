@@ -13,6 +13,21 @@ export class DataDownloadHandler extends BaseHandler {
     
     // 检查是否为数据转储页面（/dataDownload/info）
     if (_pageName === '数据下载任务详情') {
+      // 获取数据下载任务详情以获取任务名称
+      let taskName = '';
+      try {
+        const response = await fetch(`https://console.bce.baidu.com/api/aihc/data/v1/dataset/${datasetId}?locale=zh-cn&_=${Date.now()}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.result) {
+            taskName = data.result.datasetName || '';
+            console.log('[DataDownloadHandler] 获取到任务名称:', taskName);
+          }
+        }
+      } catch (error) {
+        console.error('[DataDownloadHandler] 获取任务详情失败:', error);
+      }
+      
       return {
         // 不显示任何Tab，只显示数据转储表单
         cliItems: [],
@@ -23,7 +38,8 @@ export class DataDownloadHandler extends BaseHandler {
         // 标记为数据转储页面，需要特殊处理
         isDataDumpPage: true,
         datasetId,
-        category
+        category,
+        name: taskName
       };
     }
     

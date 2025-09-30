@@ -170,6 +170,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({
   if (taskParams.isDataDumpPage) {
     console.log('[ContentArea] 🟢 渲染数据下载tabs页面');
     console.log('[ContentArea] taskParams 完整状态:', taskParams);
+    console.log('[ContentArea] taskParams.name:', taskParams.name);
     console.log('[ContentArea] onSubmitDataDump 函数情况:', {
       exists: !!_onSubmitDataDump,
       type: typeof _onSubmitDataDump,
@@ -192,6 +193,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({
           <DataDownloadTabs
             datasetId={taskParams.datasetId || ''}
             category={taskParams.category || ''}
+            taskName={taskParams.name}
             onSubmitDataDump={_onSubmitDataDump}
             onSubmitCreateDataset={async (config) => {
               console.log('创建数据集:', config);

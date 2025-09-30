@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, Select, Input, Button, message, Alert } from 'antd';
 import { SendOutlined, ReloadOutlined } from '@ant-design/icons';
 // 移除不需要的导入
@@ -8,10 +8,11 @@ const { TextArea } = Input;
 
 interface RegisterModelTabProps {
   datasetId: string;
+  taskName?: string;
   onSubmit?: (config: any) => Promise<void>;
 }
 
-const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, onSubmit }) => {
+const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, taskName, onSubmit }) => {
   const [form] = Form.useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -29,6 +30,19 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, onSubmit
     storagePath: '',
     modelMetrics: ''
   });
+
+  // 当taskName变化时，更新表单的默认描述
+  useEffect(() => {
+    console.log('[RegisterModelTab] taskName 变化:', taskName);
+    if (taskName) {
+      const defaultDescription = `由数据下载任务 ${taskName} 导入创建`;
+      console.log('[RegisterModelTab] 设置默认描述:', defaultDescription);
+      form.setFieldsValue({
+        modelDescription: defaultDescription,
+        versionDescription: defaultDescription
+      });
+    }
+  }, [taskName, form]);
 
   const handleSubmit = async () => {
     try {
@@ -88,9 +102,9 @@ const RegisterModelTab: React.FC<RegisterModelTabProps> = ({ datasetId, onSubmit
         layout="vertical"
         initialValues={{
           modelName: '',
-          modelDescription: '',
+          modelDescription: taskName ? `由数据下载任务 ${taskName} 导入创建` : '',
           modelFormat: 'HuggingFace',
-          versionDescription: '',
+          versionDescription: taskName ? `由数据下载任务 ${taskName} 导入创建` : '',
           storageBucket: '',
           storagePath: '',
           modelMetrics: ''

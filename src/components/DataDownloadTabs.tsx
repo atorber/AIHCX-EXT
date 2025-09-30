@@ -11,6 +11,7 @@ const { TabPane } = Tabs;
 interface DataDownloadTabsProps {
   datasetId: string;
   category: string;
+  taskName?: string;
   onSubmitDataDump?: (config: DataDumpConfig) => Promise<void>;
   onSubmitCreateDataset?: (config: any) => Promise<void>;
   onSubmitRegisterModel?: (config: any) => Promise<void>;
@@ -19,11 +20,21 @@ interface DataDownloadTabsProps {
 const DataDownloadTabs: React.FC<DataDownloadTabsProps> = ({
   datasetId,
   category,
+  taskName,
   onSubmitDataDump,
   onSubmitCreateDataset,
   onSubmitRegisterModel
 }) => {
   const [activeTab, setActiveTab] = useState('dataDump');
+  
+  console.log('[DataDownloadTabs] 接收到的参数:', {
+    datasetId,
+    category,
+    taskName,
+    hasOnSubmitDataDump: !!onSubmitDataDump,
+    hasOnSubmitCreateDataset: !!onSubmitCreateDataset,
+    hasOnSubmitRegisterModel: !!onSubmitRegisterModel
+  });
 
   const handleTabChange = (key: string) => {
     setActiveTab(key);
@@ -114,6 +125,7 @@ const DataDownloadTabs: React.FC<DataDownloadTabsProps> = ({
         >
           <CreateDatasetTab
             datasetId={datasetId}
+            taskName={taskName}
             onSubmit={onSubmitCreateDataset}
           />
         </TabPane>
@@ -148,6 +160,7 @@ const DataDownloadTabs: React.FC<DataDownloadTabsProps> = ({
         >
           <RegisterModelTab
             datasetId={datasetId}
+            taskName={taskName}
             onSubmit={onSubmitRegisterModel}
           />
         </TabPane>

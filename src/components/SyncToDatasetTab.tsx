@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, Select, Input, Button, message, Alert } from 'antd';
 import { SendOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
 // 移除不需要的导入
@@ -8,10 +8,11 @@ const { TextArea } = Input;
 
 interface CreateDatasetTabProps {
   datasetId: string;
+  taskName?: string;
   onSubmit?: (config: any) => Promise<void>;
 }
 
-const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, onSubmit }) => {
+const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, taskName, onSubmit }) => {
   const [form] = Form.useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -30,6 +31,19 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, onSubmit
     storagePath: '',
     mountPath: ''
   });
+
+  // 当taskName变化时，更新表单的默认描述
+  useEffect(() => {
+    console.log('[CreateDatasetTab] taskName 变化:', taskName);
+    if (taskName) {
+      const defaultDescription = `由数据下载任务 ${taskName} 导入创建`;
+      console.log('[CreateDatasetTab] 设置默认描述:', defaultDescription);
+      form.setFieldsValue({
+        datasetDescription: defaultDescription,
+        versionDescription: defaultDescription
+      });
+    }
+  }, [taskName, form]);
 
   const handleSubmit = async () => {
     try {
@@ -91,11 +105,11 @@ const CreateDatasetTab: React.FC<CreateDatasetTabProps> = ({ datasetId, onSubmit
         layout="vertical"
         initialValues={{
           datasetName: '',
-          datasetDescription: '',
+          datasetDescription: taskName ? `由数据下载任务 ${taskName} 导入创建` : '',
           storageType: 'BOS',
           storageInstance: '',
           importFormat: 'FOLDER',
-          versionDescription: '',
+          versionDescription: taskName ? `由数据下载任务 ${taskName} 导入创建` : '',
           storagePath: '',
           mountPath: ''
         }}
