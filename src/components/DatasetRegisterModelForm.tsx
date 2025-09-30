@@ -8,6 +8,7 @@ const { TextArea } = Input;
 
 interface DatasetRegisterModelFormProps {
   datasetId: string;
+  datasetType?: string;
   onSubmit?: (config: any) => Promise<void>;
 }
 
@@ -21,7 +22,7 @@ interface RequestManager {
   currentResourcePoolType: '自运维' | '全托管' | null;
 }
 
-const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({ datasetId, onSubmit }) => {
+const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({ datasetId, datasetType, onSubmit }) => {
   const [form] = Form.useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -291,6 +292,21 @@ const DatasetRegisterModelForm: React.FC<DatasetRegisterModelFormProps> = ({ dat
     setQueues([]);
     fetchQueues(value);
   };
+
+  // 检查数据集类型是否为BOS
+  if (datasetType && datasetType !== 'BOS') {
+    return (
+      <div style={{ padding: '8px' }}>
+        <Alert
+          message="不支持的数据集类型"
+          description={`当前数据集类型为 ${datasetType}，只有BOS类型的数据集支持注册模型功能。`}
+          type="warning"
+          showIcon
+          style={{ fontSize: '11px' }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '8px' }}>

@@ -175,7 +175,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({
         title: '注册模型', 
         description: '将数据集版本注册为模型',
         color: '#722ed1',
-        count: taskParams.datasetId ? 1 : 0
+        count: (taskParams.datasetId && taskParams.datasetType === 'BOS') ? 1 : 0
       }
     };
     return tabInfoMap[activeTab] || { icon: null, title: '未知', description: '', color: '#666', count: 0 };
@@ -290,6 +290,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({
             }}>
               <DatasetRegisterModelForm
                 datasetId={taskParams.datasetId || ''}
+                datasetType={taskParams.datasetType}
                 onSubmit={async (config) => {
                   console.log('注册模型:', config);
                   // 这里可以调用实际的注册模型API

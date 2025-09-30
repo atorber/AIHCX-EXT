@@ -100,8 +100,8 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
       key: 'registerModel' as TabType, 
       label: '注册模型', 
       icon: <RocketOutlined />,
-      condition: pageName === '数据集详情' && !!taskParams.datasetId,
-      count: taskParams.datasetId ? 1 : 0,
+      condition: pageName === '数据集详情' && !!taskParams.datasetId && taskParams.datasetType === 'BOS',
+      count: (taskParams.datasetId && taskParams.datasetType === 'BOS') ? 1 : 0,
       color: '#722ed1'
     }
   ];

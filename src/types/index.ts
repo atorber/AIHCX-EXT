@@ -36,6 +36,7 @@ export interface TaskParams {
   datasetId?: string;
   modelId?: string;
   category?: string;
+  datasetType?: string; // 数据集类型，如 'BOS', 'PFS' 等
 }
 
 export interface Message {
