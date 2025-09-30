@@ -72,7 +72,7 @@ export interface BaiduCredentials {
   endpoint?: string;
 }
 
-export type TabType = 'cli' | 'commandScript' | 'json' | 'yaml' | 'apiDocs' | 'chat' | 'dataImport' | 'modelDeployment';
+export type TabType = 'cli' | 'commandScript' | 'json' | 'yaml' | 'apiDocs' | 'chat' | 'dataImport' | 'modelDeployment' | 'registerModel';
 
 // 数据转储相关类型定义
 export interface DataDumpConfig {

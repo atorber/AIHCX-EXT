@@ -16,9 +16,10 @@ import YAMLParamsTab from './tabs/YAMLParamsTab';
 import APIDocsTab from './tabs/APIDocsTab';
 import ChatTab from './tabs/ChatTab';
 import DataDownloadInput from './DataDownloadInput';
-import DataDumpFormAntd from './DataDumpFormAntd';
 import DataImportForm from './DataImportForm';
 import ModelDeploymentForm from './ModelDeploymentForm';
+import DataDownloadTabs from './DataDownloadTabs';
+import DatasetRegisterModelForm from './DatasetRegisterModelForm';
 
 const { Text } = Typography;
 
@@ -69,9 +70,9 @@ const ContentArea: React.FC<ContentAreaProps> = ({
     );
   }
 
-  // 如果是数据转储页面，直接显示转储表单
+  // 如果是数据转储页面，显示数据下载tabs
   if (taskParams.isDataDumpPage) {
-    console.log('[ContentArea] 🟢 渲染数据转储页面');
+    console.log('[ContentArea] 🟢 渲染数据下载tabs页面');
     console.log('[ContentArea] taskParams 完整状态:', taskParams);
     console.log('[ContentArea] onSubmitDataDump 函数情况:', {
       exists: !!_onSubmitDataDump,
@@ -92,10 +93,18 @@ const ContentArea: React.FC<ContentAreaProps> = ({
           padding: '16px',
           border: '1px solid #e8e8e8'
         }}>
-          <DataDumpFormAntd
+          <DataDownloadTabs
             datasetId={taskParams.datasetId || ''}
             category={taskParams.category || ''}
-            onSubmit={_onSubmitDataDump}
+            onSubmitDataDump={_onSubmitDataDump}
+            onSubmitCreateDataset={async (config) => {
+              console.log('创建数据集:', config);
+              // 这里可以调用实际的创建数据集API
+            }}
+            onSubmitRegisterModel={async (config) => {
+              console.log('注册模型:', config);
+              // 这里可以调用实际的注册模型API
+            }}
           />
         </div>
       </div>
@@ -160,6 +169,13 @@ const ContentArea: React.FC<ContentAreaProps> = ({
         description: '模型服务部署',
         color: '#1890ff',
         count: taskParams.modelId ? 1 : 0
+      },
+      registerModel: { 
+        icon: <RocketOutlined />, 
+        title: '注册模型', 
+        description: '将数据集版本注册为模型',
+        color: '#722ed1',
+        count: taskParams.datasetId ? 1 : 0
       }
     };
     return tabInfoMap[activeTab] || { icon: null, title: '未知', description: '', color: '#666', count: 0 };
@@ -255,6 +271,29 @@ const ContentArea: React.FC<ContentAreaProps> = ({
               <ModelDeploymentForm
                 modelId={taskParams.modelId}
                 onSubmit={_onSubmitModelDeployment}
+              />
+            </div>
+          </div>
+        );
+      case 'registerModel':
+        return (
+          <div style={{ 
+            padding: '12px',
+            background: '#f8f9fa',
+            minHeight: '400px'
+          }}>
+            <div style={{
+              background: '#fff',
+              borderRadius: '6px',
+              border: '1px solid #e8e8e8',
+              overflow: 'hidden'
+            }}>
+              <DatasetRegisterModelForm
+                datasetId={taskParams.datasetId || ''}
+                onSubmit={async (config) => {
+                  console.log('注册模型:', config);
+                  // 这里可以调用实际的注册模型API
+                }}
               />
             </div>
           </div>
