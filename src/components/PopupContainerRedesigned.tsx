@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Layout, ConfigProvider, BackTop } from 'antd';
+import { Layout, ConfigProvider, Button } from 'antd';
+import { VerticalAlignTopOutlined } from '@ant-design/icons';
 import { TaskParams, Message, PageInfo, TabType, DataDumpConfig, DataDumpTaskTemplate } from '../types';
 import { getCurrentTabInfo } from '../utils/pageDetection';
 import { copyToClipboard, saveToFile, openUrl, createMessage } from '../utils/helpers';
@@ -39,6 +40,23 @@ const PopupContainer: React.FC<PopupContainerProps> = () => {
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);
+
+  // 回到顶部功能
+  const scrollToTop = () => {
+    const container = document.querySelector('.ant-layout-content');
+    if (container) {
+      container.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    } else {
+      // 如果找不到容器，尝试滚动整个窗口
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  };
   
   const [activeTab, setActiveTab] = useState<TabType>('cli');
   const [isLoading, setIsLoading] = useState(false);
@@ -780,21 +798,27 @@ echo "数据转储任务完成: $(date)"`,
         
         <UserGuideAntd />
         
-        {/* 回到顶部按钮 */}
-        <BackTop 
+        {/* 自定义回到顶部按钮 */}
+        <Button
+          type="primary"
+          shape="circle"
+          icon={<VerticalAlignTopOutlined />}
+          onClick={scrollToTop}
           style={{
+            position: 'fixed',
             right: 16,
             bottom: 16,
-            background: '#1890ff',
-            borderRadius: '50%',
-            width: '40px',
-            height: '40px',
+            width: 32,
+            height: 32,
+            zIndex: 1000,
+            boxShadow: '0 2px 8px rgba(24, 144, 255, 0.3)',
+            transition: 'all 0.3s ease',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(24, 144, 255, 0.3)',
-            transition: 'all 0.3s ease'
+            fontSize: '12px'
           }}
+          title="回到顶部"
         />
       </Layout>
     </ConfigProvider>
