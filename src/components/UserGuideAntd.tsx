@@ -71,7 +71,7 @@ const UserGuide: React.FC = () => {
           <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '20px' }} />
           <span>欢迎使用 AIHC助手</span>
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            v0.7.0
+            v0.8.0
           </Text>
         </Space>
       }
