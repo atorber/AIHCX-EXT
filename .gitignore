@@ -140,3 +140,4 @@ vite.config.ts.timestamp-*
 .DS_Store
 .docs/*
 scripts/bceOpenApi-test.ts
+scripts/aihc-sdk-test.ts
