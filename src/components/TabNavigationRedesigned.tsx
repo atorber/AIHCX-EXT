@@ -74,7 +74,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
     },
     { 
       key: 'chat' as TabType, 
-      label: '聊天', 
+      label: '聊天(开发中)', 
       icon: <MessageOutlined />,
       condition: pageName === '在线服务部署详情' && !!taskParams.chatConfig,
       count: taskParams.chatConfig ? 1 : 0,
@@ -82,7 +82,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
     },
     { 
       key: 'dataImport' as TabType, 
-      label: '导入数据', 
+      label: '导入数据(开发中)', 
       icon: <CloudDownloadOutlined />,
       condition: pageName === '数据集详情' && !!taskParams.datasetId,
       count: taskParams.datasetId ? 1 : 0,
@@ -90,7 +90,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
     },
     { 
       key: 'modelDeployment' as TabType, 
-      label: '部署在线服务', 
+      label: '部署在线服务(开发中)', 
       icon: <RocketOutlined />,
       condition: pageName === '模型详情' && !!taskParams.modelId,
       count: taskParams.modelId ? 1 : 0,
