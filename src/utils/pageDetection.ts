@@ -29,6 +29,7 @@ export const urlPatterns = {
   
   // Hugging Face页面
   'https://huggingface.co/datasets/': 'Hugging Face数据集页面',
+  'https://huggingface.co/': 'Hugging Face模型页面',
 };
 
 // 检测当前页面类型
@@ -116,7 +117,10 @@ export const isAIHCConsolePage = (url: string = window.location.href): boolean =
 
 // 检查是否为Hugging Face页面
 export const isHuggingFacePage = (url: string = window.location.href): boolean => {
-  return url.startsWith('https://huggingface.co/datasets/');
+  return url.startsWith('https://huggingface.co/datasets/') || 
+         (url.startsWith('https://huggingface.co/') && 
+          !url.includes('/datasets/') && 
+          url.split('/').length >= 4);
 };
 
 // 获取当前活动标签页信息

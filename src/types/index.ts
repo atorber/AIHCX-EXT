@@ -43,13 +43,14 @@ export interface TaskParams {
   datasetDescription?: string; // 数据集描述
   storageInstance?: string; // 存储实例ID
   latestVersionEntry?: any; // 最新版本信息
-  huggingFaceDataset?: { // Hugging Face数据集信息
+  huggingFaceDataset?: { // Hugging Face数据集或模型信息
     organization: string;
     name: string;
     fullName: string;
     description?: string;
     license?: string;
     tags?: string[];
+    type: 'dataset' | 'model';
   };
   huggingFaceUrl?: string; // Hugging Face URL
 }

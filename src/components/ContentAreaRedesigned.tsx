@@ -250,17 +250,21 @@ const ContentArea: React.FC<ContentAreaProps> = ({
           <div style={{ marginBottom: '20px', textAlign: 'center' }}>
             <h3 style={{ margin: '0 0 8px 0', color: '#1890ff' }}>
               <DatabaseOutlined style={{ marginRight: '8px' }} />
-              Hugging Face数据集下载
+              {taskParams.huggingFaceDataset?.type === 'model' ? 'Hugging Face模型下载' : 'Hugging Face数据集下载'}
             </h3>
             <Text type="secondary">
-              将Hugging Face数据集下载到百舸AIHC平台
+              {taskParams.huggingFaceDataset?.type === 'model' 
+                ? '将Hugging Face模型下载到百舸AIHC平台' 
+                : '将Hugging Face数据集下载到百舸AIHC平台'}
             </Text>
           </div>
           
           {taskParams.huggingFaceDataset && (
             <div style={{ marginBottom: '20px', padding: '16px', background: '#f6f8fa', borderRadius: '8px' }}>
               <div style={{ marginBottom: '12px' }}>
-                <Text strong style={{ fontSize: '14px' }}>数据集信息</Text>
+                <Text strong style={{ fontSize: '14px' }}>
+                  {taskParams.huggingFaceDataset?.type === 'model' ? '模型信息' : '数据集信息'}
+                </Text>
               </div>
               <Row gutter={[16, 8]}>
                 <Col span={24}>
@@ -320,11 +324,13 @@ const ContentArea: React.FC<ContentAreaProps> = ({
                 window.open(dataDownloadCreateUrl, '_blank');
               }}
             >
-              去百舸控制台下载
+              {taskParams.huggingFaceDataset?.type === 'model' ? '去百舸控制台下载模型' : '去百舸控制台下载'}
             </Button>
             <div style={{ marginTop: '12px' }}>
               <Text type="secondary" style={{ fontSize: '12px' }}>
-                点击按钮将在新标签页中打开百舸AIHC数据集创建页面，您可以下载此数据集
+                {taskParams.huggingFaceDataset?.type === 'model' 
+                  ? '点击按钮将在新标签页中打开百舸AIHC数据下载创建页面，您可以下载此模型' 
+                  : '点击按钮将在新标签页中打开百舸AIHC数据下载创建页面，您可以下载此数据集'}
               </Text>
             </div>
           </div>

@@ -87,7 +87,7 @@ export class DataDownloadHandler extends BaseHandler {
   }
 
   /**
-   * 解析Hugging Face URL，提取数据集信息
+   * 解析Hugging Face URL，提取数据集或模型信息
    */
   private parseHuggingFaceUrl(url: string): {
     organization: string;
@@ -96,29 +96,52 @@ export class DataDownloadHandler extends BaseHandler {
     description?: string;
     license?: string;
     tags?: string[];
+    type: 'dataset' | 'model';
   } | null {
     try {
       // 匹配Hugging Face数据集URL格式
       // https://huggingface.co/datasets/organization/dataset-name
-      const urlPattern = /^https:\/\/huggingface\.co\/datasets\/([^/]+)\/([^/?#]+)/;
-      const match = url.match(urlPattern);
+      const datasetPattern = /^https:\/\/huggingface\.co\/datasets\/([^/]+)\/([^/?#]+)/;
+      const datasetMatch = url.match(datasetPattern);
       
-      if (!match) {
-        return null;
+      if (datasetMatch) {
+        const organization = datasetMatch[1];
+        const name = datasetMatch[2];
+        const fullName = `${organization}/${name}`;
+        
+        return {
+          organization,
+          name,
+          fullName,
+          description: undefined,
+          license: undefined,
+          tags: [],
+          type: 'dataset'
+        };
       }
       
-      const organization = match[1];
-      const name = match[2];
-      const fullName = `${organization}/${name}`;
+      // 匹配Hugging Face模型URL格式
+      // https://huggingface.co/organization/model-name
+      const modelPattern = /^https:\/\/huggingface\.co\/([^/]+)\/([^/?#]+)$/;
+      const modelMatch = url.match(modelPattern);
       
-      return {
-        organization,
-        name,
-        fullName,
-        description: undefined,
-        license: undefined,
-        tags: []
-      };
+      if (modelMatch) {
+        const organization = modelMatch[1];
+        const name = modelMatch[2];
+        const fullName = `${organization}/${name}`;
+        
+        return {
+          organization,
+          name,
+          fullName,
+          description: undefined,
+          license: undefined,
+          tags: [],
+          type: 'model'
+        };
+      }
+      
+      return null;
     } catch (error) {
       console.error('[DataDownloadHandler] URL解析失败:', error);
       return null;

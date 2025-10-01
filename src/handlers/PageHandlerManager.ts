@@ -61,6 +61,7 @@ export class PageHandlerManager {
     
     // Hugging Face页面
     this.handlers.set('Hugging Face数据集页面', new HuggingFaceHandler(this.context));
+    this.handlers.set('Hugging Face模型页面', new HuggingFaceHandler(this.context));
   }
 
   /**
