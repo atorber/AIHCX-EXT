@@ -17,7 +17,8 @@ import {
   ModelVersionsHandler,
   DevelopmentMachinesHandler,
   OnlineServiceDeploymentDetailHandler,
-  DataDownloadHandler
+  DataDownloadHandler,
+  HuggingFaceHandler
 } from './pages';
 
 export class PageHandlerManager {
@@ -57,25 +58,31 @@ export class PageHandlerManager {
     this.handlers.set('在线服务部署详情', new OnlineServiceDeploymentDetailHandler(this.context));
     this.handlers.set('创建数据下载任务', new DataDownloadHandler(this.context));
     this.handlers.set('数据下载任务详情', new DataDownloadHandler(this.context));
+    
+    // Hugging Face页面
+    this.handlers.set('Hugging Face数据集页面', new HuggingFaceHandler(this.context));
   }
 
   /**
    * 处理指定页面的数据
    */
   async handlePage(pageName: string, params: Record<string, string>) {
+    console.log(`[PageHandlerManager] 🔍 查找页面处理器: ${pageName}`);
+    console.log(`[PageHandlerManager] 可用处理器:`, Array.from(this.handlers.keys()));
+    
     const handler = this.handlers.get(pageName);
     if (!handler) {
-      console.warn(`[PageHandlerManager] 未找到页面处理器: ${pageName}`);
+      console.warn(`[PageHandlerManager] ❌ 未找到页面处理器: ${pageName}`);
       return {};
     }
 
     try {
-      console.log(`[PageHandlerManager] 处理页面: ${pageName}`);
+      console.log(`[PageHandlerManager] ✅ 找到处理器，开始处理页面: ${pageName}`);
       const result = await handler.handle(pageName, params);
-      console.log(`[PageHandlerManager] 页面处理完成: ${pageName}`, result);
+      console.log(`[PageHandlerManager] ✅ 页面处理完成: ${pageName}`, result);
       return result;
     } catch (error) {
-      console.error(`[PageHandlerManager] 处理页面失败: ${pageName}`, error);
+      console.error(`[PageHandlerManager] ❌ 处理页面失败: ${pageName}`, error);
       return {};
     }
   }

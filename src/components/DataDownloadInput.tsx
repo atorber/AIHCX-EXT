@@ -16,10 +16,11 @@ interface DataDownloadInputProps {
     modelName?: string;
     openSourceModel?: string;
   }) => void;
+  initialUrl?: string; // 初始URL，用于自动填充
 }
 
-const DataDownloadInput: React.FC<DataDownloadInputProps> = ({ onParseUrl }) => {
-  const [url, setUrl] = useState('');
+const DataDownloadInput: React.FC<DataDownloadInputProps> = ({ onParseUrl, initialUrl }) => {
+  const [url, setUrl] = useState(initialUrl || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [parsedResult, setParsedResult] = useState<{
@@ -36,6 +37,18 @@ const DataDownloadInput: React.FC<DataDownloadInputProps> = ({ onParseUrl }) => 
     modelName?: string;
     openSourceModel?: string;
   } | null>(null);
+
+  // 当有初始URL时，自动解析
+  React.useEffect(() => {
+    if (initialUrl && initialUrl.trim()) {
+      console.log('[DataDownloadInput] 检测到初始URL，自动解析:', initialUrl);
+      setUrl(initialUrl);
+      // 延迟执行解析，确保组件完全挂载
+      setTimeout(() => {
+        handleParseUrl();
+      }, 100);
+    }
+  }, [initialUrl]);
 
   // 解析HuggingFace URL（支持数据集和模型）
   const parseHuggingFaceUrl = (url: string) => {

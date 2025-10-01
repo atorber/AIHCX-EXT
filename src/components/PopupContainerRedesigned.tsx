@@ -143,7 +143,7 @@ ${headers.join('\n')}`;
   }, []);
 
   // 处理URL获取
-  const handleFetchUrl = async (pageName: string, _url: string, params: Record<string, string>) => {
+  const handleFetchUrl = async (pageName: string, url: string, params: Record<string, string>) => {
     // 处理页面信息
     // 开发环境下记录当前状态
     if (process.env.NODE_ENV === 'development') {
@@ -167,37 +167,53 @@ ${headers.join('\n')}`;
       
       // 使用页面处理器管理器处理页面
       console.log('[AIHC助手] 调用页面处理器管理器');
-      const pageData = await pageHandlerManager.handlePage(pageName, params);
+      console.log('[AIHC助手] 传递的参数:', { pageName, url, params });
+      const pageData = await pageHandlerManager.handlePage(pageName, { ...params, url });
       console.log('[AIHC助手] 页面处理器返回数据:', pageData);
       
       // 更新任务参数，完全替换旧状态
-      setTaskParams(prev => ({
-        // 保留基础字段
-        type: prev.type,
-        dataSource: prev.dataSource,
-        priority: prev.priority,
-        customParams: prev.customParams,
-        generated: prev.generated,
-        name: prev.name,
-        // 设置默认值，然后用新页面数据覆盖
-        commandScript: '',
-        jsonItems: [],
-        yamlItems: [],
-        cliItems: [],
-        apiDocs: [],
-        chatConfig: undefined,
-        isDataDownloadPage: false,
-        isDataDumpPage: false,
-        datasetId: undefined,
-        category: undefined,
-        // 用新页面数据覆盖默认值
-        ...pageData
-      }));
+      setTaskParams(prev => {
+        const newParams = {
+          // 保留基础字段
+          type: prev.type,
+          dataSource: prev.dataSource,
+          priority: prev.priority,
+          customParams: prev.customParams,
+          generated: prev.generated,
+          name: prev.name,
+          // 设置默认值，然后用新页面数据覆盖
+          commandScript: '',
+          jsonItems: [],
+          yamlItems: [],
+          cliItems: [],
+          apiDocs: [],
+          chatConfig: undefined,
+          isDataDownloadPage: false,
+          isDataDumpPage: false,
+          isHuggingFaceDatasetPage: false,
+          datasetId: undefined,
+          category: undefined,
+          // 用新页面数据覆盖默认值
+          ...pageData
+        };
+        
+        console.log('[AIHC助手] 🔍 状态更新详情:', {
+          pageName,
+          pageData,
+          newParams,
+          isHuggingFaceDatasetPage: newParams.isHuggingFaceDatasetPage,
+          huggingFaceDataset: newParams.huggingFaceDataset
+        });
+        
+        return newParams;
+      });
       console.log('[AIHC助手] ✅ 任务参数已更新:', {
         oldIsDataDownloadPage: taskParams.isDataDownloadPage,
         newIsDataDownloadPage: pageData.isDataDownloadPage,
         oldIsDataDumpPage: taskParams.isDataDumpPage,
         newIsDataDumpPage: pageData.isDataDumpPage,
+        oldIsHuggingFaceDatasetPage: taskParams.isHuggingFaceDatasetPage,
+        newIsHuggingFaceDatasetPage: pageData.isHuggingFaceDatasetPage,
         pageName
       });
       
@@ -211,18 +227,23 @@ ${headers.join('\n')}`;
         }
       };
       
-      // 立即检查并设置默认tab，不使用setTimeout
-      const currentTabValid = (
-        (activeTab === 'cli' && pageData.cliItems && pageData.cliItems.length > 0) ||
-        (activeTab === 'apiDocs' && pageData.apiDocs && pageData.apiDocs.length > 0) ||
-        (activeTab === 'chat' && pageData.chatConfig) ||
-        (activeTab === 'json' && pageData.jsonItems && pageData.jsonItems.length > 0) ||
-        (activeTab === 'yaml' && pageData.yamlItems && pageData.yamlItems.length > 0) ||
-        (activeTab === 'commandScript' && pageData.commandScript)
-      );
-      
-      if (!currentTabValid) {
-        setDefaultTab();
+      // 对于特殊页面（数据转储、数据下载、HuggingFace数据集页面），不设置activeTab
+      if (pageData.isDataDumpPage || pageData.isDataDownloadPage || pageData.isHuggingFaceDatasetPage) {
+        console.log('[AIHC助手] 特殊页面，跳过activeTab设置');
+      } else {
+        // 立即检查并设置默认tab，不使用setTimeout
+        const currentTabValid = (
+          (activeTab === 'cli' && pageData.cliItems && pageData.cliItems.length > 0) ||
+          (activeTab === 'apiDocs' && pageData.apiDocs && pageData.apiDocs.length > 0) ||
+          (activeTab === 'chat' && pageData.chatConfig) ||
+          (activeTab === 'json' && pageData.jsonItems && pageData.jsonItems.length > 0) ||
+          (activeTab === 'yaml' && pageData.yamlItems && pageData.yamlItems.length > 0) ||
+          (activeTab === 'commandScript' && pageData.commandScript)
+        );
+        
+        if (!currentTabValid) {
+          setDefaultTab();
+        }
       }
       
     } catch (error) {
@@ -572,8 +593,10 @@ echo "数据转储任务完成: $(date)"`,
             // 清除特殊页面标志
             isDataDownloadPage: false,
             isDataDumpPage: false,
+            isHuggingFaceDatasetPage: false,
             datasetId: undefined,
-            category: undefined
+            category: undefined,
+            huggingFaceDataset: undefined
           }));
           setActiveTab('cli');
         }
@@ -597,6 +620,11 @@ echo "数据转储任务完成: $(date)"`,
       // 处理页面变化通知
       if (message.action === 'pageChanged') {
         console.log('[AIHC助手] 收到页面变化通知，重新检测页面');
+        console.log('[AIHC助手] 页面变化通知详情:', {
+          url: message.url,
+          timestamp: message.timestamp,
+          currentUrl: window.location.href
+        });
         // 触发页面重新检测
         detectAndUpdatePage();
         sendResponse({ success: true });
@@ -607,12 +635,14 @@ echo "数据转储任务完成: $(date)"`,
     
     // 添加消息监听器
     if (chrome.runtime && chrome.runtime.onMessage) {
+      console.log('[AIHC助手] 添加消息监听器');
       chrome.runtime.onMessage.addListener(handleBackgroundMessage);
     }
     
     // 清理监听器
     return () => {
       if (chrome.runtime && chrome.runtime.onMessage) {
+        console.log('[AIHC助手] 移除消息监听器');
         chrome.runtime.onMessage.removeListener(handleBackgroundMessage);
       }
     };
@@ -621,9 +651,9 @@ echo "数据转储任务完成: $(date)"`,
   // 监听页面变化
   useEffect(() => {
     const handleTabUpdate = (_tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
-      // 只处理当前活动标签页的变化，并且确保是AIHC控制台页面
-      if (changeInfo.url && tab.active && tab.url && tab.url.includes('console.bce.baidu.com/aihc')) {
-        console.log('[AIHC助手] 检测到AIHC页面URL变化:', changeInfo.url);
+      // 处理当前活动标签页的变化，包括所有页面（支持和不支持的）
+      if (changeInfo.url && tab.active && tab.url) {
+        console.log('[AIHC助手] 检测到页面URL变化:', changeInfo.url);
         // 使用防抖的detectAndUpdatePage，避免频繁触发
         detectAndUpdatePage();
       }
@@ -631,9 +661,10 @@ echo "数据转储任务完成: $(date)"`,
 
     const handleTabActivated = (activeInfo: chrome.tabs.TabActiveInfo) => {
       console.log('[AIHC助手] 检测到标签页切换:', activeInfo.tabId);
-      // 获取当前标签页信息，只处理AIHC页面
+      // 获取当前标签页信息，处理所有页面（支持和不支持的）
       chrome.tabs.get(activeInfo.tabId, (tab) => {
-        if (tab.url && tab.url.includes('console.bce.baidu.com/aihc')) {
+        if (tab.url) {
+          console.log('[AIHC助手] 标签页激活，URL:', tab.url);
           detectAndUpdatePage();
         }
       });
@@ -670,6 +701,7 @@ echo "数据转储任务完成: $(date)"`,
       isLoading,
       isDataDumpPage: taskParams.isDataDumpPage,
       isDataDownloadPage: taskParams.isDataDownloadPage,
+      isHuggingFaceDatasetPage: taskParams.isHuggingFaceDatasetPage,
       datasetId: taskParams.datasetId,
       category: taskParams.category
     });
@@ -688,9 +720,9 @@ echo "数据转储任务完成: $(date)"`,
       return <LoadingIndicatorRedesigned />;
     }
 
-    // 数据转储页面和数据下载页面不显示TAB导航
-    if (taskParams.isDataDumpPage || taskParams.isDataDownloadPage) {
-      console.log('[PopupContainer] 🟦 显示特殊页面（数据转储/下载）');
+    // 数据转储页面、数据下载页面和Hugging Face数据集页面不显示TAB导航
+    if (taskParams.isDataDumpPage || taskParams.isDataDownloadPage || taskParams.isHuggingFaceDatasetPage) {
+      console.log('[PopupContainer] 🟦 显示特殊页面（数据转储/下载/Hugging Face）');
       console.log('[PopupContainer] handleSubmitDataDump 函数情况:', {
         exists: !!handleSubmitDataDump,
         type: typeof handleSubmitDataDump,

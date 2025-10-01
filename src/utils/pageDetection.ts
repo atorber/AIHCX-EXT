@@ -2,6 +2,7 @@ import { PageInfo } from '../types';
 
 // URL模式映射表
 export const urlPatterns = {
+  // AIHC控制台页面
   'https://console.bce.baidu.com/aihc/resources': '自运维资源池列表',
   'https://console.bce.baidu.com/aihc/serverless/resource/list?tab=resourcePool': '全托管资源池列表',
   'https://console.bce.baidu.com/aihc/serverless/resource/list': '全托管资源池列表',
@@ -25,18 +26,21 @@ export const urlPatterns = {
   'https://console.bce.baidu.com/aihc/dataDownload/create': '创建数据下载任务',
   'https://console.bce.baidu.com/aihc/dataDownload/info?datasetId=': '数据下载任务详情',
   'https://console.bce.baidu.com/aihc/task/create?from=dataDownload': '创建任务',
+  
+  // Hugging Face页面
+  'https://huggingface.co/datasets/': 'Hugging Face数据集页面',
 };
 
 // 检测当前页面类型
 export const detectPageType = (url: string): PageInfo => {
   // 检测URL
   
-  // 首先检查是否在AIHC控制台域名下
-  if (!isAIHCConsolePage(url)) {
-    console.log('[页面检测] 不是AIHC控制台页面');
+  // 检查是否为AIHC控制台页面或Hugging Face页面
+  if (!isAIHCConsolePage(url) && !isHuggingFacePage(url)) {
+    console.log('[页面检测] 不是支持的页面');
     return {
       isSupported: false,
-      pageName: '请在百舸AIHC控制台页面使用',
+      pageName: '请在百舸AIHC控制台页面或Hugging Face数据集页面使用',
       url,
       params: {}
     };
@@ -108,6 +112,11 @@ export const parseUrl = (url: string) => {
 // 检查是否为AIHC控制台页面
 export const isAIHCConsolePage = (url: string = window.location.href): boolean => {
   return url.startsWith('https://console.bce.baidu.com/aihc');
+};
+
+// 检查是否为Hugging Face页面
+export const isHuggingFacePage = (url: string = window.location.href): boolean => {
+  return url.startsWith('https://huggingface.co/datasets/');
 };
 
 // 获取当前活动标签页信息

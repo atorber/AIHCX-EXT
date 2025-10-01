@@ -217,31 +217,35 @@ const addButtonInteractions = (toggleButton: HTMLElement) => {
       // 保持显示 'AIHC'，不切换文案
 
       // 尝试重新打开侧边栏
-      chrome.runtime.sendMessage({ action: 'openSidePanel' }, (response) => {
-        if (response && response.success) {
-          log('成功重新打开浏览器侧边栏');
-          sidebarOpen = true;
-          toggleButton.classList.add('active');
-          toggleButton.style.background = 'linear-gradient(135deg, #34a853 0%, #4285f4 100%)';
-          // 保持显示 'AIHC'，不切换文案
-        } else {
-          log('重新打开侧边栏失败:', response?.error || '未知错误');
-          showToast('请手动点击浏览器工具栏中的插件图标打开AIHC助手', 'warning');
-        }
+      safeChromeCall(() => {
+        chrome.runtime.sendMessage({ action: 'openSidePanel' }, (response) => {
+          if (response && response.success) {
+            log('成功重新打开浏览器侧边栏');
+            sidebarOpen = true;
+            toggleButton.classList.add('active');
+            toggleButton.style.background = 'linear-gradient(135deg, #34a853 0%, #4285f4 100%)';
+            // 保持显示 'AIHC'，不切换文案
+          } else {
+            log('重新打开侧边栏失败:', response?.error || '未知错误');
+            showToast('请手动点击浏览器工具栏中的插件图标打开AIHC助手', 'warning');
+          }
+        });
       });
     } else {
       // 打开侧边栏
-      chrome.runtime.sendMessage({ action: 'openSidePanel' }, (response) => {
-        if (response && response.success) {
-          log('成功打开浏览器侧边栏');
-          sidebarOpen = true;
-          toggleButton.classList.add('active');
-          toggleButton.style.background = 'linear-gradient(135deg, #34a853 0%, #4285f4 100%)';
-          // 保持显示 'AIHC'，不切换文案
-        } else {
-          log('无法打开侧边栏:', response?.error || '未知错误');
-          showToast('请手动点击浏览器工具栏中的插件图标来使用AIHC助手', 'warning');
-        }
+      safeChromeCall(() => {
+        chrome.runtime.sendMessage({ action: 'openSidePanel' }, (response) => {
+          if (response && response.success) {
+            log('成功打开浏览器侧边栏');
+            sidebarOpen = true;
+            toggleButton.classList.add('active');
+            toggleButton.style.background = 'linear-gradient(135deg, #34a853 0%, #4285f4 100%)';
+            // 保持显示 'AIHC'，不切换文案
+          } else {
+            log('无法打开侧边栏:', response?.error || '未知错误');
+            showToast('请手动点击浏览器工具栏中的插件图标来使用AIHC助手', 'warning');
+          }
+        });
       });
     }
   });
@@ -564,6 +568,16 @@ const isAIHCConsolePage = () => {
   return window.location.href.startsWith('https://console.bce.baidu.com/aihc');
 };
 
+// 检查是否为Hugging Face页面
+const isHuggingFacePage = () => {
+  return window.location.href.startsWith('https://huggingface.co/datasets/');
+};
+
+// 检查是否为支持的页面
+const isSupportedPage = () => {
+  return isAIHCConsolePage() || isHuggingFacePage();
+};
+
 // 添加CSS动画样式
 const addAnimationStyles = () => {
   const style = document.createElement('style');
@@ -596,9 +610,22 @@ const addAnimationStyles = () => {
 // 初始化内容脚本
 log('内容脚本已加载，当前URL: ' + window.location.href);
 
+// 监听URL变化 - 优化版本
+let lastUrl = '';
+let urlChangeDebounceTimer: number | null = null;
+
 const initializePlugin = () => {
-  if (isAIHCConsolePage()) {
-    log('检测到AIHC控制台页面');
+  // 初始化lastUrl
+  lastUrl = window.location.href;
+  console.log('[AIHC助手] 🚀 初始化插件，当前URL:', lastUrl);
+  
+  if (isSupportedPage()) {
+    if (isAIHCConsolePage()) {
+      log('检测到AIHC控制台页面');
+    } else if (isHuggingFacePage()) {
+      log('检测到Hugging Face数据集页面');
+    }
+    
     // 检查是否已禁用
     chrome.storage.local.get(['aihcx-helper-disabled'], (result) => {
       if (!result['aihcx-helper-disabled']) {
@@ -606,6 +633,9 @@ const initializePlugin = () => {
         addAnimationStyles();
         injectComponent();
         loadConfig();
+        
+        // 立即通知侧边栏页面内容已更新
+        notifySidebarPageChange(lastUrl);
       } else {
         log('插件已被禁用');
       }
@@ -619,13 +649,11 @@ if (document.readyState === 'complete') {
   window.addEventListener('load', initializePlugin);
 }
 
-// 监听URL变化 - 优化版本
-let lastUrl = window.location.href;
-let urlChangeDebounceTimer: number | null = null;
-
 // 创建一个专门监听URL变化的函数
 const handleUrlChange = () => {
+  console.log('[AIHC助手] 🔍 handleUrlChange被调用');
   const currentUrl = window.location.href;
+  console.log('[AIHC助手] 🔍 URL比较:', { currentUrl, lastUrl, isDifferent: currentUrl !== lastUrl });
   if (currentUrl !== lastUrl) {
     console.log('[AIHC助手] 🔄 检测到URL变化:', {
       from: lastUrl,
@@ -652,8 +680,8 @@ const handleUrlChange = () => {
         existingToggle.remove();
       }
       
-      // 在AIHC页面重新注入组件
-      if (isAIHCConsolePage()) {
+      // 在支持的页面重新注入组件
+      if (isSupportedPage()) {
         try {
           chrome.storage.local.get(['aihcx-helper-disabled'], (result) => {
             try {
@@ -685,7 +713,9 @@ const handleUrlChange = () => {
           console.error('[AIHC助手] ❌ 存储访问失败:', error);
         }
       } else {
-        console.log('[AIHC助手] ℹ️ 非AIHC页面，不注入组件');
+        console.log('[AIHC助手] ℹ️ 非支持页面，不注入组件');
+        // 即使是不支持的页面，也要通知侧边栏页面变化
+        notifySidebarPageChange(currentUrl);
       }
     }, 300); // 300ms防抖延迟
   }
@@ -698,6 +728,12 @@ const notifySidebarPageChange = (newUrl: string) => {
       url: newUrl,
       timestamp: Date.now()
     });
+    
+    // 检查扩展上下文是否有效
+    if (!isExtensionContextValid()) {
+      console.warn('[AIHC助手] ⚠️ 扩展上下文已失效，跳过页面变化通知');
+      return;
+    }
     
     // 发送消息给background script，通知页面变化
     chrome.runtime.sendMessage({

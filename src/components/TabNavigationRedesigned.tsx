@@ -26,8 +26,8 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
   taskParams,
   pageName
 }) => {
-  // 如果是数据下载页面，不显示Tab导航
-  if (taskParams.isDataDownloadPage) {
+  // 如果是数据下载页面或Hugging Face数据集页面，不显示Tab导航
+  if (taskParams.isDataDownloadPage || taskParams.isHuggingFaceDatasetPage) {
     return null;
   }
 

@@ -33,14 +33,25 @@ export interface TaskParams {
   chatError?: string;
   isDataDownloadPage?: boolean;
   isDataDumpPage?: boolean;
+  isHuggingFaceDatasetPage?: boolean; // Hugging Face数据集页面
   datasetId?: string;
   modelId?: string;
   category?: string;
   datasetType?: string; // 数据集类型，如 'BOS', 'PFS' 等
   datasetStoragePath?: string; // 数据集存储路径，如 "bos:/aihc-datasets/huggingface.co/datasets/nvidia/PhysicalAI-Robotics-GR00T-GR1"
   datasetName?: string; // 数据集名称
+  datasetDescription?: string; // 数据集描述
   storageInstance?: string; // 存储实例ID
   latestVersionEntry?: any; // 最新版本信息
+  huggingFaceDataset?: { // Hugging Face数据集信息
+    organization: string;
+    name: string;
+    fullName: string;
+    description?: string;
+    license?: string;
+    tags?: string[];
+  };
+  huggingFaceUrl?: string; // Hugging Face URL
 }
 
 export interface Message {

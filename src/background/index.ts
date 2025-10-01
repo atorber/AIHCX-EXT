@@ -259,9 +259,18 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     console.log('[AIHC助手] 收到页面变化通知:', message.url);
     
     try {
-      // 直接返回成功，不需要特别的处理
-      // 侧边栏应该依赖自身的URL监听机制来更新内容
-      console.log('[AIHC助手] 页面变化通知处理完成');
+      // 将页面变化通知转发给侧边栏（popup）
+      console.log('[AIHC助手] 尝试转发页面变化通知给侧边栏');
+      chrome.runtime.sendMessage({
+        action: 'pageChanged',
+        url: message.url,
+        timestamp: message.timestamp
+      }).then(() => {
+        console.log('[AIHC助手] 页面变化通知已转发给侧边栏');
+      }).catch((error) => {
+        console.log('[AIHC助手] 转发页面变化通知失败（侧边栏可能未打开）:', error);
+      });
+      
       sendResponse({ success: true });
     } catch (error) {
       console.error('[AIHC助手] 处理页面变化通知失败:', error);

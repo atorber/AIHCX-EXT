@@ -1,5 +1,5 @@
 import React from 'react';
-import { Space, Typography, Empty, Row, Col, Tag } from 'antd';
+import { Space, Typography, Empty, Row, Col, Tag, Button } from 'antd';
 import { 
   FileTextOutlined, 
   RocketOutlined, 
@@ -177,7 +177,9 @@ const ContentArea: React.FC<ContentAreaProps> = ({
             <DatabaseOutlined style={{ color: '#1890ff', fontSize: '16px' }} />
             <Text strong style={{ fontSize: '14px' }}>数据下载助手</Text>
           </Space>
-          <DataDownloadInput />
+          <DataDownloadInput 
+            initialUrl={taskParams.huggingFaceUrl}
+          />
         </div>
       </div>
     );
@@ -222,6 +224,110 @@ const ContentArea: React.FC<ContentAreaProps> = ({
               await handleRegisterModel(config);
             }}
           />
+        </div>
+      </div>
+    );
+  }
+
+  // 如果是Hugging Face数据集页面，显示数据集下载功能
+  if (taskParams.isHuggingFaceDatasetPage) {
+    console.log('[ContentArea] 🟢 渲染Hugging Face数据集页面');
+    console.log('[ContentArea] Hugging Face数据集信息:', taskParams.huggingFaceDataset);
+    console.log('[ContentArea] 🔍 完整taskParams:', taskParams);
+    
+    return (
+      <div style={{ 
+        padding: '12px',
+        background: '#f8f9fa',
+        minHeight: '400px'
+      }}>
+        <div style={{
+          background: '#fff',
+          borderRadius: '8px',
+          padding: '16px',
+          border: '1px solid #e8e8e8'
+        }}>
+          <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+            <h3 style={{ margin: '0 0 8px 0', color: '#1890ff' }}>
+              <DatabaseOutlined style={{ marginRight: '8px' }} />
+              Hugging Face数据集下载
+            </h3>
+            <Text type="secondary">
+              将Hugging Face数据集下载到百舸AIHC平台
+            </Text>
+          </div>
+          
+          {taskParams.huggingFaceDataset && (
+            <div style={{ marginBottom: '20px', padding: '16px', background: '#f6f8fa', borderRadius: '8px' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <Text strong style={{ fontSize: '14px' }}>数据集信息</Text>
+              </div>
+              <Row gutter={[16, 8]}>
+                <Col span={24}>
+                  <Text strong>名称：</Text>
+                  <Text code>{taskParams.huggingFaceDataset.fullName}</Text>
+                </Col>
+                {taskParams.huggingFaceDataset.description && (
+                  <Col span={24}>
+                    <Text strong>描述：</Text>
+                    <Text style={{ fontSize: '12px' }}>
+                      {taskParams.huggingFaceDataset.description.length > 100 
+                        ? taskParams.huggingFaceDataset.description.substring(0, 100) + '...'
+                        : taskParams.huggingFaceDataset.description
+                      }
+                    </Text>
+                  </Col>
+                )}
+                {taskParams.huggingFaceDataset.license && (
+                  <Col span={24}>
+                    <Text strong>许可证：</Text>
+                    <Tag color="blue" style={{ fontSize: '11px' }}>{taskParams.huggingFaceDataset.license}</Tag>
+                  </Col>
+                )}
+                {taskParams.huggingFaceDataset.tags && taskParams.huggingFaceDataset.tags.length > 0 && (
+                  <Col span={24}>
+                    <Text strong>标签：</Text>
+                    <div style={{ marginTop: '4px' }}>
+                      {taskParams.huggingFaceDataset.tags.slice(0, 5).map((tag, index) => (
+                        <Tag key={index} color="green" style={{ fontSize: '11px', marginBottom: '4px' }}>
+                          {tag}
+                        </Tag>
+                      ))}
+                      {taskParams.huggingFaceDataset.tags.length > 5 && (
+                        <Tag color="default" style={{ fontSize: '11px' }}>
+                          +{taskParams.huggingFaceDataset.tags.length - 5}
+                        </Tag>
+                      )}
+                    </div>
+                  </Col>
+                )}
+              </Row>
+            </div>
+          )}
+          
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <Button 
+              type="primary" 
+              size="large"
+              icon={<CloudDownloadOutlined />}
+              onClick={() => {
+                // 构建包含HuggingFace数据集URL的数据下载创建页面链接
+                // 使用从taskParams传递过来的HuggingFace URL，而不是window.location.href
+                const huggingFaceUrl = taskParams.huggingFaceUrl || window.location.href;
+                const dataDownloadCreateUrl = `https://console.bce.baidu.com/aihc/dataDownload/create?hf=${encodeURIComponent(huggingFaceUrl)}`;
+                console.log('[ContentArea] 跳转到数据下载创建页面:', dataDownloadCreateUrl);
+                console.log('[ContentArea] 使用的HuggingFace URL:', huggingFaceUrl);
+                window.open(dataDownloadCreateUrl, '_blank');
+              }}
+            >
+              去百舸控制台下载
+            </Button>
+            <div style={{ marginTop: '12px' }}>
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                点击按钮将在新标签页中打开百舸AIHC数据集创建页面，您可以下载此数据集
+              </Text>
+            </div>
+          </div>
         </div>
       </div>
     );

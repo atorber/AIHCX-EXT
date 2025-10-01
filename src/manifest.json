@@ -37,6 +37,11 @@
         "matches": ["*://console.bce.baidu.com/*"],
         "js": ["content/index.js"],
         "css": ["content/style.css"]
+      },
+      {
+        "matches": ["*://huggingface.co/datasets/*"],
+        "js": ["content/index.js"],
+        "css": ["content/style.css"]
       }
     ],
     
@@ -44,13 +49,14 @@
     
     "host_permissions": [
         "*://console.bce.baidu.com/*",
-        "*://aihc.bj.baidubce.com/*"
+        "*://aihc.bj.baidubce.com/*",
+        "*://huggingface.co/*"
     ],
     
     "web_accessible_resources": [
       {
         "resources": ["content/*.css", "content/*.js", "chunks/*.js", "assets/icons/*"],
-        "matches": ["*://console.bce.baidu.com/*"]
+        "matches": ["*://console.bce.baidu.com/*", "*://huggingface.co/*"]
       }
     ]
 } 
