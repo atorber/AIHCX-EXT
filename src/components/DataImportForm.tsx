@@ -47,6 +47,7 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
   const [resourcePools, setResourcePools] = useState<ResourcePool[]>([]);
   const [queues, setQueues] = useState<Queue[]>([]);
   const [selectedVersionInfo, setSelectedVersionInfo] = useState<any>(null);
+  const [datasetInfo, setDatasetInfo] = useState<any>(null);
   
   // 请求管理器
   const requestManagerRef = useRef<RequestManager>({
@@ -67,6 +68,32 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     queueId: '',
     datasetId: datasetId || ''
   });
+
+  // 获取数据集详情
+  const fetchDatasetInfo = async () => {
+    if (!datasetId) return;
+    
+    try {
+      const apiUrl = `https://console.bce.baidu.com/api/aihc/asset/v1/datasets/${datasetId}?locale=zh-cn&_=${Date.now()}`;
+      const response = await fetch(apiUrl, {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.result) {
+          setDatasetInfo({
+            datasetType: data.result.storageType || 'BOS',
+            datasetName: data.result.name || '',
+            storageInstance: data.result.storageInstance || '',
+            datasetId: datasetId
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('获取数据集详情失败:', error);
+    }
+  };
 
   // 获取数据集版本列表
   const fetchDatasetVersions = async () => {
@@ -228,9 +255,12 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
 
   // 组件挂载时获取数据集版本和自运维资源池列表
   useEffect(() => {
+    if (datasetId) {
+      fetchDatasetInfo();
+    }
     fetchDatasetVersions();
     fetchResourcePools('自运维');
-  }, []);
+  }, [datasetId]);
 
   // 处理数据集版本变化
   const handleDatasetVersionChange = (value: string) => {
@@ -383,6 +413,29 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
         }}
         style={{ margin: 0 }}
       >
+        {/* 数据集基本信息 */}
+        {datasetInfo && (
+          <div style={{ 
+            marginBottom: '8px',
+            padding: '8px',
+            backgroundColor: '#f0f8ff',
+            borderRadius: '4px',
+            border: '1px solid #b3d9ff'
+          }}>
+            <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>
+              📊 数据集基本信息
+            </div>
+            <div style={{ fontSize: '10px', color: '#495057', fontFamily: 'monospace' }}>
+              <div style={{ marginBottom: '2px' }}>
+                <strong>存储类型:</strong> {datasetInfo.datasetType}
+              </div>
+              <div>
+                <strong>存储实例ID:</strong> {datasetInfo.storageInstance}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 数据集版本 */}
         <Form.Item 
           name="datasetVersion"
@@ -425,17 +478,8 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
               <div style={{ marginBottom: '2px' }}>
                 <strong>默认挂载路径:</strong> {selectedVersionInfo.mountPath}
               </div>
-              <div style={{ marginBottom: '2px' }}>
-                <strong>存储路径:</strong> {selectedVersionInfo.storagePath}
-              </div>
-              <div style={{ marginBottom: '2px' }}>
-                <strong>创建时间:</strong> {selectedVersionInfo.createTime}
-              </div>
-              <div style={{ marginBottom: '2px' }}>
-                <strong>创建用户:</strong> {selectedVersionInfo.createUser}
-              </div>
               <div>
-                <strong>更新时间:</strong> {selectedVersionInfo.updateTime}
+                <strong>存储路径:</strong> {selectedVersionInfo.storagePath}
               </div>
             </div>
           </div>
