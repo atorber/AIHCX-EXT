@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Form, Select, Input, Button, message, Alert, Spin } from 'antd';
 import { SendOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
 import { aihcApiService, ResourcePool, Queue } from '../services/aihcApi';
+import { createDataImportTask, DataImportTaskConfig } from '../services/dataImportApi';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -336,34 +337,75 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
       setError('');
       setShowResult(false);
 
-      const config: DataImportConfig = {
+      const importConfig: DataImportTaskConfig = {
+        datasetId: datasetId || '',
         datasetVersion: values.datasetVersion,
         importType: values.importType,
         importUrl: values.importUrl,
-        resourcePoolType: values.resourcePoolType,
         resourcePoolId: values.resourcePoolId,
+        resourcePoolType: values.resourcePoolType,
         queueId: values.queueId,
-        datasetId: datasetId || ''
+        datasetType: datasetInfo?.datasetType,
+        storageInstance: datasetInfo?.storageInstance,
+        storagePath: selectedVersionInfo?.storagePath // 添加存储路径
       };
 
-      console.log('🚀 提交数据导入任务:', config);
+      console.log('🚀 提交数据导入任务:');
+      console.log('📋 表单配置:', {
+        datasetId: importConfig.datasetId,
+        datasetVersion: importConfig.datasetVersion,
+        importType: importConfig.importType,
+        importUrl: importConfig.importUrl,
+        resourcePoolType: importConfig.resourcePoolType,
+        resourcePoolId: importConfig.resourcePoolId,
+        queueId: importConfig.queueId,
+        datasetType: importConfig.datasetType,
+        storageInstance: importConfig.storageInstance,
+        storagePath: importConfig.storagePath
+      });
+      console.log('📋 数据集信息:', datasetInfo);
+      console.log('📋 选中版本信息:', selectedVersionInfo);
 
-      // 这里应该调用实际的导入API
-      // 暂时模拟成功响应
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      const result = {
-        success: true,
-        taskId: `import-${Date.now()}`,
-        message: '数据导入任务已创建成功'
-      };
-
+      // 调用数据导入API
+      console.log('🔄 开始调用数据导入API...');
+      const result = await createDataImportTask(importConfig);
+      
       setImportResult(result);
       setShowResult(true);
-      message.success('数据导入任务创建成功');
+
+      if (result.success) {
+        console.log('✅ 数据导入任务创建成功:', result.result);
+        console.log('📋 任务详情:', {
+          jobId: result.result?.jobId,
+          jobName: result.result?.jobName,
+          k8sName: result.result?.k8sName
+        });
+        message.success('数据导入任务创建成功！');
+      } else {
+        console.error('❌ 数据导入任务创建失败:', result.error);
+        console.error('🔍 详细错误信息:', {
+          error: result.error,
+          config: importConfig,
+          timestamp: new Date().toISOString()
+        });
+        
+        // 直接显示错误信息
+        const errorMsg = result.error || '数据导入任务创建失败';
+        setError(errorMsg);
+        message.error(errorMsg);
+      }
 
       // 通知父组件
       if (onSubmit) {
+        const config: DataImportConfig = {
+          datasetVersion: values.datasetVersion,
+          importType: values.importType,
+          importUrl: values.importUrl,
+          resourcePoolType: values.resourcePoolType,
+          resourcePoolId: values.resourcePoolId,
+          queueId: values.queueId,
+          datasetId: datasetId || ''
+        };
         await onSubmit(config);
       }
 
@@ -630,15 +672,16 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
         {/* 导入结果提示 */}
         {showResult && importResult && (
           <Alert
-            message={importResult.success ? '导入任务创建成功' : '导入任务创建失败'}
+            message={importResult.success ? '数据导入任务创建成功' : '数据导入任务创建失败'}
             description={
               importResult.success ? (
                 <div>
-                  <div style={{ fontSize: '11px' }}>任务ID: <span style={{ fontFamily: 'monospace', fontSize: '10px' }}>{importResult.taskId}</span></div>
-                  <div style={{ fontSize: '11px', marginTop: '4px' }}>{importResult.message}</div>
+                  <div style={{ fontSize: '11px' }}>任务ID: <span style={{ fontFamily: 'monospace', fontSize: '10px' }}>{importResult.result?.jobId}</span></div>
+                  <div style={{ fontSize: '11px', marginTop: '4px' }}>任务名称: <span style={{ fontFamily: 'monospace', fontSize: '10px' }}>{importResult.result?.jobName}</span></div>
+                  <div style={{ fontSize: '11px', marginTop: '4px' }}>K8s名称: <span style={{ fontFamily: 'monospace', fontSize: '10px' }}>{importResult.result?.k8sName}</span></div>
                 </div>
               ) : (
-                <div style={{ fontSize: '11px' }}>{importResult.message}</div>
+                <div style={{ fontSize: '11px' }}>{importResult.error}</div>
               )
             }
             type={importResult.success ? 'success' : 'error'}

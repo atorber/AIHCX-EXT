@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Layout, ConfigProvider, Button } from 'antd';
 import { VerticalAlignTopOutlined } from '@ant-design/icons';
-import { TaskParams, Message, PageInfo, TabType, DataDumpConfig, DataDumpTaskTemplate } from '../types';
+import { TaskParams, Message, PageInfo, TabType, DataDumpConfig, DataDumpTaskTemplate, DataImportConfig } from '../types';
 import { getCurrentTabInfo } from '../utils/pageDetection';
 import { copyToClipboard, saveToFile, openUrl, createMessage } from '../utils/helpers';
 import { PageHandlerManager } from '../handlers';
@@ -431,6 +431,22 @@ ${headers.join('\n')}`;
     }
   }, [showMessage]);
 
+  // 处理数据导入提交
+  const handleSubmitDataImport = useCallback(async (config: DataImportConfig) => {
+    console.log('[AIHC助手] 处理数据导入提交:', config);
+    
+    try {
+      // 数据导入任务已经在DataImportForm中直接调用API创建
+      // 这里只需要显示成功消息
+      showMessage('success', '数据导入任务已创建成功！');
+      
+    } catch (error) {
+      console.error('[AIHC助手] 数据导入处理失败:', error);
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      showMessage('error', `数据导入处理失败: ${errorMessage}`);
+    }
+  }, [showMessage]);
+
   // 生成数据转储任务模板
   const generateDataDumpTaskTemplate = (config: DataDumpConfig): DataDumpTaskTemplate => {
     const timestamp = Date.now();
@@ -739,6 +755,7 @@ echo "数据转储任务完成: $(date)"`,
           onOpenUrl={handleOpenUrl}
           onLoadChatConfig={handleLoadChatConfig}
           onSubmitDataDump={handleSubmitDataDump}
+          onSubmitDataImport={handleSubmitDataImport}
         />
       );
     }
@@ -760,6 +777,7 @@ echo "数据转储任务完成: $(date)"`,
           onOpenUrl={handleOpenUrl}
           onLoadChatConfig={handleLoadChatConfig}
           onSubmitDataDump={handleSubmitDataDump}
+          onSubmitDataImport={handleSubmitDataImport}
         />
       </>
     );
