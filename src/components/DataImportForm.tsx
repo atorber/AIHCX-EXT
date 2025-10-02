@@ -22,7 +22,8 @@ interface DataImportFormProps {
 }
 
 interface DataImportConfig {
-  datasetVersion: string;
+  targetDatasetVersion: string; // 目标数据集版本
+  sourceDatasetVersion: string; // 源数据集版本（当导入方式为"数据集"时使用）
   importType: 'HuggingFace' | 'ModelScope' | '数据集';
   importUrl: string;
   accessToken?: string; // 访问令牌，选填
@@ -46,11 +47,13 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   
   // 选项数据
-  const [datasetVersions, setDatasetVersions] = useState<any[]>([]);
+  const [datasetVersions, setDatasetVersions] = useState<any[]>([]); // 目标数据集版本列表
+  const [sourceDatasetVersions, setSourceDatasetVersions] = useState<any[]>([]); // 源数据集版本列表
   const [resourcePools, setResourcePools] = useState<ResourcePool[]>([]);
   const [queues, setQueues] = useState<Queue[]>([]);
   const [datasets, setDatasets] = useState<any[]>([]); // 数据集列表
-  const [selectedVersionInfo, setSelectedVersionInfo] = useState<any>(null);
+  const [selectedVersionInfo, setSelectedVersionInfo] = useState<any>(null); // 目标数据集版本信息
+  const [selectedSourceVersionInfo, setSelectedSourceVersionInfo] = useState<any>(null); // 源数据集版本信息
   const [datasetInfo, setDatasetInfo] = useState<any>(null);
   const [selectedDataset, setSelectedDataset] = useState<any>(null); // 选中的数据集
   
@@ -65,7 +68,8 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
   
   // 表单配置
   const [config, setConfig] = useState<DataImportConfig>({
-    datasetVersion: '',
+    targetDatasetVersion: '', // 目标数据集版本
+    sourceDatasetVersion: '', // 源数据集版本
     importType: 'HuggingFace',
     importUrl: '',
     accessToken: '', // 访问令牌，选填
@@ -101,8 +105,8 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     }
   };
 
-  // 获取数据集版本列表
-  const fetchDatasetVersions = async () => {
+  // 获取目标数据集版本列表
+  const fetchTargetDatasetVersions = async () => {
     if (!datasetId) return;
     
     try {
@@ -116,18 +120,18 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
       
       // 使用函数式更新来获取最新的config状态
       setConfig(currentConfig => {
-        if (currentConfig.datasetVersion && !versions.find((version: any) => version.versionId === currentConfig.datasetVersion)) {
-          const updatedConfig = { ...currentConfig, datasetVersion: '' };
-          form.setFieldsValue(updatedConfig);
+        if (currentConfig.targetDatasetVersion && !versions.find((version: any) => version.versionId === currentConfig.targetDatasetVersion)) {
+          const updatedConfig = { ...currentConfig, targetDatasetVersion: '' };
+          form.setFieldsValue({ targetDatasetVersion: '' });
           return updatedConfig;
-        } else if (versions.length > 0 && !currentConfig.datasetVersion) {
+        } else if (versions.length > 0 && !currentConfig.targetDatasetVersion) {
           // 如果没有选择版本且有可用版本，默认选中第一个
           const firstVersion = versions[0];
           const updatedConfig = { 
             ...currentConfig, 
-            datasetVersion: firstVersion.versionId
+            targetDatasetVersion: firstVersion.versionId
           };
-          form.setFieldsValue(updatedConfig);
+          form.setFieldsValue({ targetDatasetVersion: firstVersion.versionId });
           setSelectedVersionInfo(firstVersion);
           return updatedConfig;
         }
@@ -135,9 +139,9 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
       });
       
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '获取数据集版本列表失败';
+      const errorMessage = err instanceof Error ? err.message : '获取目标数据集版本列表失败';
       setError(errorMessage);
-      console.error('获取数据集版本列表失败:', err);
+      console.error('获取目标数据集版本列表失败:', err);
     } finally {
       setIsLoadingDatasetVersions(false);
     }
@@ -283,20 +287,31 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
   useEffect(() => {
     if (datasetId) {
       fetchDatasetInfo();
+      fetchTargetDatasetVersions();
     }
-    fetchDatasetVersions();
     fetchResourcePools('自运维');
   }, [datasetId]);
 
-  // 处理数据集版本变化
-  const handleDatasetVersionChange = (value: string) => {
-    const updatedConfig = { ...config, datasetVersion: value };
+  // 处理目标数据集版本变化
+  const handleTargetDatasetVersionChange = (value: string) => {
+    const updatedConfig = { ...config, targetDatasetVersion: value };
     setConfig(updatedConfig);
-    form.setFieldsValue(updatedConfig);
+    form.setFieldsValue({ targetDatasetVersion: value });
     
     // 设置选中版本的详细信息
     const selectedVersion = datasetVersions.find(version => version.versionId === value);
     setSelectedVersionInfo(selectedVersion || null);
+  };
+
+  // 处理源数据集版本变化
+  const handleSourceDatasetVersionChange = (value: string) => {
+    const updatedConfig = { ...config, sourceDatasetVersion: value };
+    setConfig(updatedConfig);
+    form.setFieldsValue({ sourceDatasetVersion: value });
+    
+    // 设置选中版本的详细信息
+    const selectedVersion = sourceDatasetVersions.find(version => version.versionId === value);
+    setSelectedSourceVersionInfo(selectedVersion || null);
   };
 
   // 处理导入方式变化
@@ -438,34 +453,39 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     const selectedDataset = datasets.find(dataset => dataset.id === value);
     setSelectedDataset(selectedDataset || null);
     
-    // 清空版本选择和相关信息
-    setConfig(prev => ({ ...prev, datasetVersion: '' }));
-    form.setFieldsValue({ datasetVersion: '' });
-    setSelectedVersionInfo(null);
+    // 清空源版本选择和相关信息
+    setConfig(prev => ({ ...prev, sourceDatasetVersion: '' }));
+    form.setFieldsValue({ sourceDatasetVersion: '' });
+    setSelectedSourceVersionInfo(null);
     
     if (selectedDataset) {
       // 获取选中数据集的版本列表
-      fetchDatasetVersionsForDataset(selectedDataset.id);
+      fetchSourceDatasetVersions(selectedDataset.id);
     } else {
-      setDatasetVersions([]);
+      setSourceDatasetVersions([]);
     }
   };
 
-  // 获取指定数据集的版本列表
-  const fetchDatasetVersionsForDataset = async (datasetId: string) => {
+  // 获取源数据集的版本列表
+  const fetchSourceDatasetVersions = async (datasetId: string) => {
     setIsLoadingDatasetVersions(true);
     setError('');
     
     try {
       const versions = await aihcApiService.getDatasetVersions(datasetId);
-      setDatasetVersions(versions);
+      setSourceDatasetVersions(versions);
+      
+      // 清空之前选择的源版本
+      setConfig(prev => ({ ...prev, sourceDatasetVersion: '' }));
+      form.setFieldsValue({ sourceDatasetVersion: '' });
+      setSelectedSourceVersionInfo(null);
       
       // 不自动选择版本，让用户手动选择
-      console.log(`📋 获取到 ${versions.length} 个版本，请手动选择`);
+      console.log(`📋 获取到源数据集 ${versions.length} 个版本，请手动选择`);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '获取数据集版本失败';
+      const errorMessage = err instanceof Error ? err.message : '获取源数据集版本失败';
       setError(errorMessage);
-      console.error('获取数据集版本失败:', err);
+      console.error('获取源数据集版本失败:', err);
     } finally {
       setIsLoadingDatasetVersions(false);
     }
@@ -484,17 +504,24 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
       let finalStorageInstance = datasetInfo?.storageInstance;
       let finalStoragePath = selectedVersionInfo?.storagePath;
       
-      // 如果是数据集导入方式，使用选中的数据集信息
+      // 如果是数据集导入方式，需要分别处理源数据集和目标数据集的信息
       if (values.importType === '数据集' && selectedDataset) {
+        // 对于数据集导入，我们需要传递源数据集的信息
+        // 但目标数据集的信息仍然使用当前数据集的信息
         finalDatasetId = selectedDataset.id;
         finalDatasetType = selectedDataset.storageType;
         finalStorageInstance = selectedDataset.storageInstance;
-        finalStoragePath = selectedVersionInfo?.storagePath;
+        finalStoragePath = selectedSourceVersionInfo?.storagePath;
       }
+      
+      // 确定使用的数据集版本
+      const datasetVersion = values.importType === '数据集' 
+        ? values.sourceDatasetVersion 
+        : values.targetDatasetVersion;
       
       const importConfig: DataImportTaskConfig = {
         datasetId: finalDatasetId,
-        datasetVersion: values.datasetVersion,
+        datasetVersion: datasetVersion,
         importType: values.importType,
         importUrl: values.importUrl,
         accessToken: values.accessToken, // 添加访问令牌
@@ -503,13 +530,32 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
         queueId: values.queueId,
         datasetType: finalDatasetType,
         storageInstance: finalStorageInstance,
-        storagePath: finalStoragePath // 添加存储路径
+        storagePath: finalStoragePath, // 添加存储路径
+        
+        // 在数据集导入模式下，添加源数据集和目标数据集的详细信息
+        ...(values.importType === '数据集' && selectedDataset ? {
+          // 源数据集信息（选中的数据集）
+          sourceDatasetId: selectedDataset.id,
+          sourceDatasetVersion: values.sourceDatasetVersion,
+          sourceDatasetType: selectedDataset.storageType,
+          sourceStorageInstance: selectedDataset.storageInstance,
+          sourceStoragePath: selectedSourceVersionInfo?.storagePath,
+          
+          // 目标数据集信息（当前数据集）
+          targetDatasetId: datasetId,
+          targetDatasetVersion: values.targetDatasetVersion,
+          targetDatasetType: datasetInfo?.datasetType,
+          targetStorageInstance: datasetInfo?.storageInstance,
+          targetStoragePath: selectedVersionInfo?.storagePath
+        } : {})
       };
 
       console.log('🚀 提交数据导入任务:');
       console.log('📋 表单配置:', {
         datasetId: importConfig.datasetId,
         datasetVersion: importConfig.datasetVersion,
+        targetDatasetVersion: values.targetDatasetVersion,
+        sourceDatasetVersion: values.sourceDatasetVersion,
         importType: importConfig.importType,
         importUrl: importConfig.importUrl,
         accessToken: importConfig.accessToken ? '***已设置***' : '未设置',
@@ -521,7 +567,8 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
         storagePath: importConfig.storagePath
       });
       console.log('📋 数据集信息:', datasetInfo);
-      console.log('📋 选中版本信息:', selectedVersionInfo);
+      console.log('📋 目标版本信息:', selectedVersionInfo);
+      console.log('📋 源版本信息:', selectedSourceVersionInfo);
 
       // 调用数据导入API
       console.log('🔄 开始调用数据导入API...');
@@ -555,7 +602,8 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
       // 通知父组件
       if (onSubmit) {
         const config: DataImportConfig = {
-          datasetVersion: values.datasetVersion,
+          targetDatasetVersion: values.targetDatasetVersion,
+          sourceDatasetVersion: values.sourceDatasetVersion,
           importType: values.importType,
           importUrl: values.importUrl,
           resourcePoolType: values.resourcePoolType,
@@ -581,7 +629,8 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     setShowResult(false);
     setImportResult(null);
     setConfig({
-      datasetVersion: '',
+      targetDatasetVersion: '',
+      sourceDatasetVersion: '',
       importType: 'HuggingFace',
       importUrl: '',
       resourcePoolType: '自运维',
@@ -590,10 +639,15 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
       datasetId: datasetId || ''
     });
     setDatasetVersions([]);
+    setSourceDatasetVersions([]);
     setResourcePools([]);
     setQueues([]);
     setSelectedVersionInfo(null);
-    fetchDatasetVersions();
+    setSelectedSourceVersionInfo(null);
+    setSelectedDataset(null);
+    if (datasetId) {
+      fetchTargetDatasetVersions();
+    }
     fetchResourcePools('自运维');
   };
 
@@ -603,7 +657,8 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
         form={form}
         layout="vertical"
         initialValues={{
-          datasetVersion: '',
+          targetDatasetVersion: '',
+          sourceDatasetVersion: '',
           importType: 'HuggingFace',
           importUrl: '',
           resourcePoolType: '自运维',
@@ -635,18 +690,18 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
           </div>
         )}
 
-        {/* 数据集版本 */}
+        {/* 目标数据集版本 */}
         <Form.Item 
-          name="datasetVersion"
-          rules={[{ required: true, message: '请选择数据集版本' }]}
+          name="targetDatasetVersion"
+          rules={[{ required: true, message: '请选择目标数据集版本' }]}
           style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>数据集版本 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          label={<span style={{ fontSize: '11px', color: '#666' }}>目标数据集版本 <span style={{ color: '#ff4d4f' }}>*</span></span>}
         >
           <Select
-            placeholder={isLoadingDatasetVersions ? "加载中..." : "请选择数据集版本"}
-            onChange={handleDatasetVersionChange}
+            placeholder={isLoadingDatasetVersions ? "加载中..." : "请选择目标数据集版本"}
+            onChange={handleTargetDatasetVersionChange}
             disabled={isLoadingDatasetVersions}
-            value={config.datasetVersion}
+            value={config.targetDatasetVersion}
             style={{ width: '100%', fontSize: '11px' }}
             notFoundContent={isLoadingDatasetVersions ? <Spin size="small" /> : "暂无数据"}
           >
@@ -737,7 +792,7 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
             name="selectedDataset"
             rules={[{ required: true, message: '请选择数据集' }]}
             style={{ marginBottom: '8px' }}
-            label={<span style={{ fontSize: '11px', color: '#666' }}>选择数据集 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>选择源数据集 <span style={{ color: '#ff4d4f' }}>*</span></span>}
           >
             <Select
               placeholder="请选择数据集"
@@ -757,30 +812,56 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
           </Form.Item>
         )}
 
-        {/* 数据集版本选择 - 仅当导入方式为"数据集"且已选择数据集时显示 */}
+        {/* 源数据集版本选择 - 仅当导入方式为"数据集"且已选择数据集时显示 */}
         {config.importType === '数据集' && selectedDataset && (
           <Form.Item 
-            name="datasetVersion"
-            rules={[{ required: true, message: '请选择数据集版本' }]}
+            name="sourceDatasetVersion"
+            rules={[{ required: true, message: '请选择源数据集版本' }]}
             style={{ marginBottom: '8px' }}
-            label={<span style={{ fontSize: '11px', color: '#666' }}>数据集版本 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>源数据集版本 <span style={{ color: '#ff4d4f' }}>*</span></span>}
           >
             <Select
-              placeholder="请选择数据集版本"
-              value={config.datasetVersion}
-              onChange={handleDatasetVersionChange}
+              placeholder="请选择源数据集版本"
+              value={config.sourceDatasetVersion}
+              onChange={handleSourceDatasetVersionChange}
               loading={isLoadingDatasetVersions}
               disabled={isLoadingDatasetVersions}
               notFoundContent={isLoadingDatasetVersions ? <Spin size="small" /> : '暂无版本'}
               style={{ width: '100%', fontSize: '11px' }}
             >
-              {datasetVersions.map((version: any) => (
+              {sourceDatasetVersions.map((version: any) => (
                 <Option key={version.versionId} value={version.versionId}>
                   {version.versionName} - {version.description || '无描述'}
                 </Option>
               ))}
             </Select>
           </Form.Item>
+        )}
+
+        {/* 源数据集版本信息显示 */}
+        {config.importType === '数据集' && selectedSourceVersionInfo && (
+          <div style={{ 
+            marginBottom: '8px',
+            padding: '8px',
+            backgroundColor: '#fff7e6',
+            borderRadius: '4px',
+            border: '1px solid #ffd591'
+          }}>
+            <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>
+              📁 源版本路径信息
+            </div>
+            <div style={{ fontSize: '10px', color: '#495057', fontFamily: 'monospace' }}>
+              <div style={{ marginBottom: '2px' }}>
+                <strong>版本号:</strong> {selectedSourceVersionInfo.versionName}
+              </div>
+              <div style={{ marginBottom: '2px' }}>
+                <strong>默认挂载路径:</strong> {selectedSourceVersionInfo.mountPath}
+              </div>
+              <div>
+                <strong>存储路径:</strong> {selectedSourceVersionInfo.storagePath}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Access Token - 仅当导入方式不为"数据集"时显示 */}

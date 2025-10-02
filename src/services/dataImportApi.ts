@@ -13,6 +13,20 @@ export interface DataImportTaskConfig {
   datasetType?: string;
   storageInstance?: string;
   storagePath?: string; // 存储路径，用于BOS类型的数据源配置
+  
+  // 数据集导入模式下的源数据集信息
+  sourceDatasetId?: string; // 源数据集ID
+  sourceDatasetVersion?: string; // 源数据集版本
+  sourceDatasetType?: string; // 源数据集类型
+  sourceStorageInstance?: string; // 源数据集存储实例
+  sourceStoragePath?: string; // 源数据集存储路径
+  
+  // 数据集导入模式下的目标数据集信息
+  targetDatasetId?: string; // 目标数据集ID
+  targetDatasetVersion?: string; // 目标数据集版本
+  targetDatasetType?: string; // 目标数据集类型
+  targetStorageInstance?: string; // 目标数据集存储实例
+  targetStoragePath?: string; // 目标数据集存储路径
 }
 
 // 任务创建响应接口
@@ -51,9 +65,9 @@ const generateDataSources = (config: DataImportTaskConfig): any[] => {
     });
     
     // 源数据集配置（选中的数据集）- 使用选中数据集的存储信息
-    const sourceDatasetType = config.datasetType || 'BOS';
-    const sourceStorageInstance = config.storageInstance;
-    const sourceStoragePath = config.storagePath || config.datasetVersion;
+    const sourceDatasetType = config.sourceDatasetType || config.datasetType || 'BOS';
+    const sourceStorageInstance = config.sourceStorageInstance || config.storageInstance;
+    const sourceStoragePath = config.sourceStoragePath || config.storagePath || config.datasetVersion;
     
     let sourceDataSource;
     
@@ -66,7 +80,8 @@ const generateDataSources = (config: DataImportTaskConfig): any[] => {
           type: 'bos',
           name: '', // BOS类型name为空字符串
           sourcePath: bosSourcePath,
-          mountPath: '/mnt/source'
+          mountPath: '/mnt/source',
+          options: {} // 添加options字段以支持CSI配置
         };
         break;
         
@@ -94,16 +109,28 @@ const generateDataSources = (config: DataImportTaskConfig): any[] => {
           type: 'bos',
           name: '',
           sourcePath: sourceStoragePath,
-          mountPath: '/mnt/source'
+          mountPath: '/mnt/source',
+          options: {} // 添加options字段以支持CSI配置
         };
     }
     
     // 目标数据集配置（当前数据集）- 使用当前数据集的存储信息
+    // 注意：这里需要获取当前数据集的信息，而不是源数据集的信息
+    // 目标数据集的存储信息应该从config中获取，而不是从源数据集获取
+    const targetStoragePath = config.targetStoragePath || config.storagePath || config.datasetVersion;
+    const targetStorageInstance = config.targetStorageInstance || config.storageInstance;
+    
+    let targetSourcePath = '';
+    if (targetStorageInstance && targetStoragePath) {
+      targetSourcePath = `${targetStorageInstance}${targetStoragePath.startsWith('/') ? targetStoragePath : `/${targetStoragePath}`}`;
+    }
+    
     const targetDataSource = {
       type: 'bos', // 目标数据集默认为BOS类型
       name: '',
-      sourcePath: '', // 目标数据集路径由系统自动分配
-      mountPath: '/mnt/output'
+      sourcePath: targetSourcePath, // 使用当前数据集的存储路径
+      mountPath: '/mnt/output',
+      options: {} // 添加options字段以支持CSI配置
     };
     
     console.log('🔧 源数据集配置:', sourceDataSource);
@@ -134,7 +161,8 @@ const generateDataSources = (config: DataImportTaskConfig): any[] => {
           type: 'bos',
           name: '', // BOS类型name为空字符串
           sourcePath: bosSourcePath, // 存储实例ID拼接存储版本的存储路径
-          mountPath: '/mnt/output'
+          mountPath: '/mnt/output',
+          options: {} // 添加options字段以支持CSI配置
         }
       ];
     
@@ -172,7 +200,8 @@ const generateDataSources = (config: DataImportTaskConfig): any[] => {
           type: 'bos',
           name: '', // BOS类型name为空字符串
           sourcePath: defaultBosSourcePath, // 存储实例ID拼接存储版本的存储路径
-          mountPath: '/mnt/output'
+          mountPath: '/mnt/output',
+          options: {} // 添加options字段以支持CSI配置
         }
       ];
   }
