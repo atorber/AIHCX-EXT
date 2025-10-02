@@ -117,21 +117,52 @@ const generateDataSources = (config: DataImportTaskConfig): any[] => {
     // 目标数据集配置（当前数据集）- 使用当前数据集的存储信息
     // 注意：这里需要获取当前数据集的信息，而不是源数据集的信息
     // 目标数据集的存储信息应该从config中获取，而不是从源数据集获取
+    const targetDatasetType = config.targetDatasetType || 'BOS';
     const targetStoragePath = config.targetStoragePath || config.storagePath || config.datasetVersion;
     const targetStorageInstance = config.targetStorageInstance || config.storageInstance;
     
-    let targetSourcePath = '';
-    if (targetStorageInstance && targetStoragePath) {
-      targetSourcePath = `${targetStorageInstance}${targetStoragePath.startsWith('/') ? targetStoragePath : `/${targetStoragePath}`}`;
-    }
+    let targetDataSource;
     
-    const targetDataSource = {
-      type: 'bos', // 目标数据集默认为BOS类型
-      name: '',
-      sourcePath: targetSourcePath, // 使用当前数据集的存储路径
-      mountPath: '/mnt/output',
-      options: {} // 添加options字段以支持CSI配置
-    };
+    // 根据目标数据集的存储类型配置不同的数据源
+    switch (targetDatasetType.toUpperCase()) {
+      case 'PFS':
+        targetDataSource = {
+          type: 'pfs',
+          name: targetStorageInstance || config.datasetId,
+          sourcePath: targetStoragePath,
+          mountPath: '/mnt/output'
+        };
+        break;
+        
+      case 'BOS':
+        let targetSourcePath = '';
+        if (targetStorageInstance && targetStoragePath) {
+          targetSourcePath = `${targetStorageInstance}${targetStoragePath.startsWith('/') ? targetStoragePath : `/${targetStoragePath}`}`;
+        }
+        targetDataSource = {
+          type: 'bos',
+          name: '',
+          sourcePath: targetSourcePath,
+          mountPath: '/mnt/output',
+          options: {}
+        };
+        break;
+        
+      default:
+        // 默认使用BOS配置
+        let defaultTargetSourcePath = '';
+        if (targetStorageInstance && targetStoragePath) {
+          defaultTargetSourcePath = `${targetStorageInstance}${targetStoragePath.startsWith('/') ? targetStoragePath : `/${targetStoragePath}`}`;
+        }
+        targetDataSource = {
+          type: 'bos',
+          name: '',
+          sourcePath: defaultTargetSourcePath,
+          mountPath: '/mnt/output',
+          options: {}
+        };
+        break;
+    }
     
     console.log('🔧 源数据集配置:', sourceDataSource);
     console.log('🔧 目标数据集配置:', targetDataSource);

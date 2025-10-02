@@ -56,6 +56,7 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
   const [selectedSourceVersionInfo, setSelectedSourceVersionInfo] = useState<any>(null); // 源数据集版本信息
   const [datasetInfo, setDatasetInfo] = useState<any>(null);
   const [selectedDataset, setSelectedDataset] = useState<any>(null); // 选中的数据集
+  const [selectedResourcePoolPfsInstances, setSelectedResourcePoolPfsInstances] = useState<any[]>([]); // 选中资源池的PFS实例
   
   // 请求管理器
   const requestManagerRef = useRef<RequestManager>({
@@ -360,7 +361,17 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     setQueues([]);
     
     if (value) {
+      // 获取选中资源池的PFS实例信息（用于显示）
+      fetchResourcePoolPfsInstances(value, config.resourcePoolType);
+      
+      // 如果是数据集导入模式且涉及PFS类型，需要验证资源池的PFS实例绑定
+      if (config.importType === '数据集' && selectedDataset) {
+        validateResourcePoolForPFS(value, config.resourcePoolType);
+      }
       fetchQueues(value, config.resourcePoolType);
+    } else {
+      // 清空PFS实例信息
+      setSelectedResourcePoolPfsInstances([]);
     }
   };
 
@@ -461,6 +472,11 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     if (selectedDataset) {
       // 获取选中数据集的版本列表
       fetchSourceDatasetVersions(selectedDataset.id);
+      
+      // 如果已经选择了资源池，需要重新验证PFS实例绑定
+      if (config.resourcePoolId && config.resourcePoolType) {
+        validateResourcePoolForPFS(config.resourcePoolId, config.resourcePoolType);
+      }
     } else {
       setSourceDatasetVersions([]);
     }
@@ -491,12 +507,106 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     }
   };
 
+  // 获取选中资源池的PFS实例信息
+  const fetchResourcePoolPfsInstances = async (resourcePoolId: string, resourcePoolType: '自运维' | '全托管') => {
+    try {
+      console.log('🔍 获取资源池PFS实例信息:', {
+        resourcePoolId,
+        resourcePoolType
+      });
+
+      const resourcePoolTypeForAPI = resourcePoolType === '自运维' ? 'common' : 'serverless';
+      const pfsInstances = await aihcApiService.getPFSInstances(resourcePoolId, resourcePoolTypeForAPI);
+      
+      console.log('📋 资源池绑定的PFS实例:', pfsInstances);
+      setSelectedResourcePoolPfsInstances(pfsInstances);
+      
+      return pfsInstances;
+    } catch (err) {
+      console.error('获取资源池PFS实例失败:', err);
+      setSelectedResourcePoolPfsInstances([]);
+      return [];
+    }
+  };
+
+  // 验证资源池是否支持PFS数据集导入
+  const validateResourcePoolForPFS = async (resourcePoolId: string, resourcePoolType: '自运维' | '全托管') => {
+    try {
+      console.log('🔍 开始验证资源池PFS实例绑定:', {
+        resourcePoolId,
+        resourcePoolType,
+        selectedDataset,
+        datasetInfo
+      });
+
+      // 检查源数据集和目标数据集是否都是PFS类型
+      const isSourcePFS = selectedDataset?.storageType?.toUpperCase() === 'PFS';
+      const isTargetPFS = datasetInfo?.datasetType?.toUpperCase() === 'PFS';
+      
+      if (!isSourcePFS && !isTargetPFS) {
+        console.log('✅ 源数据集和目标数据集都不是PFS类型，无需验证');
+        return true;
+      }
+
+      // 获取资源池的PFS实例列表
+      const pfsInstances = await fetchResourcePoolPfsInstances(resourcePoolId, resourcePoolType);
+      
+      console.log('📋 资源池绑定的PFS实例:', pfsInstances);
+
+      // 收集需要的PFS实例ID
+      const requiredPfsInstances = new Set<string>();
+      
+      if (isSourcePFS && selectedDataset?.storageInstance) {
+        requiredPfsInstances.add(selectedDataset.storageInstance);
+        console.log('🔍 需要源数据集PFS实例:', selectedDataset.storageInstance);
+      }
+      
+      if (isTargetPFS && datasetInfo?.storageInstance) {
+        requiredPfsInstances.add(datasetInfo.storageInstance);
+        console.log('🔍 需要目标数据集PFS实例:', datasetInfo.storageInstance);
+      }
+
+      // 检查资源池是否绑定了所有需要的PFS实例
+      const boundPfsInstances = pfsInstances.map(instance => instance.id);
+      const missingInstances = Array.from(requiredPfsInstances).filter(
+        instanceId => !boundPfsInstances.includes(instanceId)
+      );
+
+      if (missingInstances.length > 0) {
+        const errorMessage = `资源池未绑定所需的PFS实例: ${missingInstances.join(', ')}。请选择绑定了源数据集和目标数据集PFS实例的资源池。`;
+        setError(errorMessage);
+        message.error(errorMessage);
+        console.error('❌ PFS实例验证失败:', missingInstances);
+        return false;
+      }
+
+      console.log('✅ PFS实例验证通过');
+      setError(''); // 清除之前的错误信息
+      return true;
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '验证资源池PFS实例绑定失败';
+      setError(errorMessage);
+      console.error('验证资源池PFS实例绑定失败:', err);
+      return false;
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
       setIsSubmitting(true);
       setError('');
       setShowResult(false);
+
+      // 如果是数据集导入模式且涉及PFS类型，进行最终验证
+      if (values.importType === '数据集' && selectedDataset && values.resourcePoolId) {
+        const isValid = await validateResourcePoolForPFS(values.resourcePoolId, values.resourcePoolType);
+        if (!isValid) {
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
       // 根据导入方式确定数据集信息
       let finalDatasetId = datasetId || '';
@@ -645,6 +755,7 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     setSelectedVersionInfo(null);
     setSelectedSourceVersionInfo(null);
     setSelectedDataset(null);
+    setSelectedResourcePoolPfsInstances([]); // 清空PFS实例信息
     if (datasetId) {
       fetchTargetDatasetVersions();
     }
@@ -812,6 +923,47 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
           </Form.Item>
         )}
 
+        {/* 源数据集信息显示 - 仅当导入方式为"数据集"且已选择数据集时显示 */}
+        {config.importType === '数据集' && selectedDataset && (
+          <div style={{ 
+            marginBottom: '8px',
+            padding: '8px',
+            backgroundColor: '#e6f7ff',
+            borderRadius: '4px',
+            border: '1px solid #91d5ff'
+          }}>
+            <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>
+              📊 源数据集信息
+            </div>
+            <div style={{ fontSize: '10px', color: '#495057', fontFamily: 'monospace' }}>
+              <div style={{ marginBottom: '2px' }}>
+                <strong>存储类型:</strong> 
+                <span style={{ 
+                  color: selectedDataset.storageType?.toUpperCase() === 'PFS' ? '#52c41a' : 
+                         selectedDataset.storageType?.toUpperCase() === 'BOS' ? '#1890ff' : '#666',
+                  marginLeft: '4px'
+                }}>
+                  {selectedDataset.storageType?.toUpperCase() === 'PFS' ? '🗂️ PFS' : 
+                   selectedDataset.storageType?.toUpperCase() === 'BOS' ? '☁️ BOS' : 
+                   selectedDataset.storageType || '未知'}
+                </span>
+              </div>
+              <div>
+                <strong>存储实例ID:</strong> 
+                <span style={{ 
+                  color: '#722ed1',
+                  fontFamily: 'monospace',
+                  backgroundColor: '#f9f0ff',
+                  padding: '1px 4px',
+                  borderRadius: '2px'
+                }}>
+                  {selectedDataset.storageInstance || '未设置'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 源数据集版本选择 - 仅当导入方式为"数据集"且已选择数据集时显示 */}
         {config.importType === '数据集' && selectedDataset && (
           <Form.Item 
@@ -924,6 +1076,76 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
             ))}
           </Select>
         </Form.Item>
+
+        {/* 选中资源池的PFS实例信息显示 */}
+        {config.resourcePoolId && selectedResourcePoolPfsInstances.length > 0 && (
+          <div style={{ 
+            marginBottom: '8px',
+            padding: '8px',
+            backgroundColor: '#f6ffed',
+            borderRadius: '4px',
+            border: '1px solid #b7eb8f'
+          }}>
+            <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>
+              🗂️ 资源池绑定的PFS实例 ({selectedResourcePoolPfsInstances.length}个)
+            </div>
+            <div style={{ fontSize: '10px', color: '#495057' }}>
+              {selectedResourcePoolPfsInstances.map((instance: any, index: number) => (
+                <div key={instance.id} style={{ 
+                  marginBottom: index < selectedResourcePoolPfsInstances.length - 1 ? '4px' : '0',
+                  padding: '4px',
+                  backgroundColor: '#fafafa',
+                  borderRadius: '2px',
+                  fontFamily: 'monospace'
+                }}>
+                  <div style={{ marginBottom: '2px' }}>
+                    <strong>ID:</strong> {instance.id}
+                  </div>
+                  <div style={{ marginBottom: '2px' }}>
+                    <strong>名称:</strong> {instance.name}
+                  </div>
+                  <div style={{ marginBottom: '2px' }}>
+                    <strong>状态:</strong> 
+                    <span style={{ 
+                      color: instance.status === 'ready' ? '#52c41a' : '#faad14',
+                      marginLeft: '4px'
+                    }}>
+                      {instance.status === 'ready' ? '✅ 就绪' : '⚠️ 其他'}
+                    </span>
+                  </div>
+                  {instance.capacity && (
+                    <div style={{ marginBottom: '2px' }}>
+                      <strong>容量:</strong> {instance.capacity} GB
+                    </div>
+                  )}
+                  {instance.usage && (
+                    <div>
+                      <strong>已用:</strong> {instance.usage} GB
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 选中资源池无PFS实例提示 */}
+        {config.resourcePoolId && selectedResourcePoolPfsInstances.length === 0 && (
+          <div style={{ 
+            marginBottom: '8px',
+            padding: '8px',
+            backgroundColor: '#fffbe6',
+            borderRadius: '4px',
+            border: '1px solid #ffe58f'
+          }}>
+            <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>
+              🗂️ 资源池PFS实例信息
+            </div>
+            <div style={{ fontSize: '10px', color: '#ad6800' }}>
+              <span>⚠️ 该资源池未绑定PFS实例</span>
+            </div>
+          </div>
+        )}
 
         {/* 队列 */}
         <Form.Item 
