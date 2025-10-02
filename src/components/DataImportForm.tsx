@@ -25,6 +25,7 @@ interface DataImportConfig {
   datasetVersion: string;
   importType: 'HuggingFace' | 'ModelScope' | '数据集';
   importUrl: string;
+  accessToken?: string; // 访问令牌，选填
   resourcePoolType: '自运维' | '全托管';
   resourcePoolId: string;
   queueId: string;
@@ -42,13 +43,16 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
   const [isLoadingDatasetVersions, setIsLoadingDatasetVersions] = useState(false);
   const [isLoadingResourcePools, setIsLoadingResourcePools] = useState(false);
   const [isLoadingQueues, setIsLoadingQueues] = useState(false);
+  const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   
   // 选项数据
   const [datasetVersions, setDatasetVersions] = useState<any[]>([]);
   const [resourcePools, setResourcePools] = useState<ResourcePool[]>([]);
   const [queues, setQueues] = useState<Queue[]>([]);
+  const [datasets, setDatasets] = useState<any[]>([]); // 数据集列表
   const [selectedVersionInfo, setSelectedVersionInfo] = useState<any>(null);
   const [datasetInfo, setDatasetInfo] = useState<any>(null);
+  const [selectedDataset, setSelectedDataset] = useState<any>(null); // 选中的数据集
   
   // 请求管理器
   const requestManagerRef = useRef<RequestManager>({
@@ -64,6 +68,7 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     datasetVersion: '',
     importType: 'HuggingFace',
     importUrl: '',
+    accessToken: '', // 访问令牌，选填
     resourcePoolType: '自运维',
     resourcePoolId: '',
     queueId: '',
@@ -135,6 +140,23 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
       console.error('获取数据集版本列表失败:', err);
     } finally {
       setIsLoadingDatasetVersions(false);
+    }
+  };
+
+  // 获取数据集列表
+  const fetchDatasets = async () => {
+    setIsLoadingDatasets(true);
+    setError('');
+    
+    try {
+      const datasets = await aihcApiService.getDatasets();
+      setDatasets(datasets);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '获取数据集列表失败';
+      setError(errorMessage);
+      console.error('获取数据集列表失败:', err);
+    } finally {
+      setIsLoadingDatasets(false);
     }
   };
 
@@ -286,6 +308,11 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     };
     setConfig(updatedConfig);
     form.setFieldsValue(updatedConfig);
+    
+    // 如果选择"数据集"，自动获取数据集列表
+    if (value === '数据集') {
+      fetchDatasets();
+    }
   };
 
   // 处理资源池类型变化
@@ -329,11 +356,119 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     form.setFieldsValue(updatedConfig);
   };
 
+  // 自动检测导入方式
+  const detectImportType = (url: string): 'HuggingFace' | 'ModelScope' | '数据集' => {
+    if (!url.trim()) return 'HuggingFace'; // 默认为HuggingFace
+    
+    // 处理多行输入，按行分割
+    const urls = url.split('\n').map(line => line.trim()).filter(line => line);
+    if (urls.length === 0) return 'HuggingFace';
+    
+    // 统计各种类型的URL数量
+    let huggingfaceCount = 0;
+    let modelscopeCount = 0;
+    let datasetCount = 0;
+    
+    urls.forEach(url => {
+      const lowerUrl = url.toLowerCase();
+      
+      // 检测HuggingFace
+      if (lowerUrl.includes('huggingface.co') || lowerUrl.includes('hf.co')) {
+        huggingfaceCount++;
+      }
+      // 检测ModelScope
+      else if (lowerUrl.includes('modelscope.cn') || lowerUrl.includes('modelscope')) {
+        modelscopeCount++;
+      }
+      // 检测其他数据集源
+      else if (lowerUrl.includes('github.com') || 
+               lowerUrl.includes('kaggle.com') || 
+               lowerUrl.includes('zenodo.org') ||
+               lowerUrl.includes('figshare.com') ||
+               lowerUrl.includes('drive.google.com') ||
+               lowerUrl.includes('dropbox.com') ||
+               lowerUrl.includes('onedrive.live.com') ||
+               lowerUrl.includes('mega.nz') ||
+               lowerUrl.includes('baidu.com') ||
+               lowerUrl.includes('aliyun.com') ||
+               lowerUrl.includes('tencent.com')) {
+        datasetCount++;
+      }
+    });
+    
+    // 根据数量最多的类型返回
+    if (huggingfaceCount >= modelscopeCount && huggingfaceCount >= datasetCount) {
+      return 'HuggingFace';
+    } else if (modelscopeCount >= datasetCount) {
+      return 'ModelScope';
+    } else {
+      return '数据集';
+    }
+  };
+
   // 处理导入地址变化
   const handleImportUrlChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const updatedConfig = { ...config, importUrl: e.target.value };
+    const importUrl = e.target.value;
+    const detectedImportType = detectImportType(importUrl);
+    
+    const updatedConfig = { 
+      ...config, 
+      importUrl: importUrl,
+      importType: detectedImportType // 自动切换导入方式
+    };
+    
     setConfig(updatedConfig);
     form.setFieldsValue(updatedConfig);
+    
+    // 显示自动检测结果
+    if (importUrl.trim() && detectedImportType !== config.importType) {
+      console.log(`🔍 自动检测导入方式: ${detectedImportType}`);
+    }
+  };
+
+  // 处理Access Token变化
+  const handleAccessTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const updatedConfig = { ...config, accessToken: e.target.value };
+    setConfig(updatedConfig);
+    form.setFieldsValue(updatedConfig);
+  };
+
+  // 处理数据集选择变化
+  const handleDatasetChange = (value: string) => {
+    const selectedDataset = datasets.find(dataset => dataset.id === value);
+    setSelectedDataset(selectedDataset || null);
+    
+    // 清空版本选择和相关信息
+    setConfig(prev => ({ ...prev, datasetVersion: '' }));
+    form.setFieldsValue({ datasetVersion: '' });
+    setSelectedVersionInfo(null);
+    
+    if (selectedDataset) {
+      // 获取选中数据集的版本列表
+      fetchDatasetVersionsForDataset(selectedDataset.id);
+    } else {
+      setDatasetVersions([]);
+    }
+  };
+
+  // 获取指定数据集的版本列表
+  const fetchDatasetVersionsForDataset = async (datasetId: string) => {
+    setIsLoadingDatasetVersions(true);
+    setError('');
+    
+    try {
+      const versions = await aihcApiService.getDatasetVersions(datasetId);
+      setDatasetVersions(versions);
+      
+      // 不自动选择版本，让用户手动选择
+      console.log(`📋 获取到 ${versions.length} 个版本，请手动选择`);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '获取数据集版本失败';
+      setError(errorMessage);
+      console.error('获取数据集版本失败:', err);
+    } finally {
+      setIsLoadingDatasetVersions(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -343,17 +478,32 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
       setError('');
       setShowResult(false);
 
+      // 根据导入方式确定数据集信息
+      let finalDatasetId = datasetId || '';
+      let finalDatasetType = datasetInfo?.datasetType;
+      let finalStorageInstance = datasetInfo?.storageInstance;
+      let finalStoragePath = selectedVersionInfo?.storagePath;
+      
+      // 如果是数据集导入方式，使用选中的数据集信息
+      if (values.importType === '数据集' && selectedDataset) {
+        finalDatasetId = selectedDataset.id;
+        finalDatasetType = selectedDataset.storageType;
+        finalStorageInstance = selectedDataset.storageInstance;
+        finalStoragePath = selectedVersionInfo?.storagePath;
+      }
+      
       const importConfig: DataImportTaskConfig = {
-        datasetId: datasetId || '',
+        datasetId: finalDatasetId,
         datasetVersion: values.datasetVersion,
         importType: values.importType,
         importUrl: values.importUrl,
+        accessToken: values.accessToken, // 添加访问令牌
         resourcePoolId: values.resourcePoolId,
         resourcePoolType: values.resourcePoolType,
         queueId: values.queueId,
-        datasetType: datasetInfo?.datasetType,
-        storageInstance: datasetInfo?.storageInstance,
-        storagePath: selectedVersionInfo?.storagePath // 添加存储路径
+        datasetType: finalDatasetType,
+        storageInstance: finalStorageInstance,
+        storagePath: finalStoragePath // 添加存储路径
       };
 
       console.log('🚀 提交数据导入任务:');
@@ -362,6 +512,7 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
         datasetVersion: importConfig.datasetVersion,
         importType: importConfig.importType,
         importUrl: importConfig.importUrl,
+        accessToken: importConfig.accessToken ? '***已设置***' : '未设置',
         resourcePoolType: importConfig.resourcePoolType,
         resourcePoolId: importConfig.resourcePoolId,
         queueId: importConfig.queueId,
@@ -552,21 +703,103 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
           </Select>
         </Form.Item>
 
-        {/* 导入地址 */}
-        <Form.Item 
-          name="importUrl"
-          rules={[{ required: true, message: '请输入导入地址' }]}
-          style={{ marginBottom: '8px' }}
-          label={<span style={{ fontSize: '11px', color: '#666' }}>导入地址 <span style={{ color: '#ff4d4f' }}>*</span></span>}
-          extra={<span style={{ fontSize: '10px', color: '#999' }}>支持多行输入，每行一个地址</span>}
-        >
-          <TextArea
-            placeholder="请输入导入地址&#10;支持多行输入，每行一个地址"
-            rows={3}
-            onChange={handleImportUrlChange}
-            style={{ fontSize: '11px', resize: 'vertical' }}
-          />
-        </Form.Item>
+        {/* 导入地址 - 仅当导入方式不为"数据集"时显示 */}
+        {config.importType !== '数据集' && (
+          <Form.Item 
+            name="importUrl"
+            rules={[{ required: true, message: '请输入导入地址' }]}
+            style={{ marginBottom: '8px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>导入地址 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            extra={
+              <div style={{ fontSize: '10px', color: '#999' }}>
+                <div>支持多行输入，每行一个地址</div>
+                {config.importUrl && (
+                  <div style={{ color: '#1890ff', marginTop: '2px' }}>
+                    🔍 自动检测为: {config.importType === 'HuggingFace' ? '🤗 HuggingFace' : 
+                                     config.importType === 'ModelScope' ? '🏛️ ModelScope' : '📊 数据集'}
+                  </div>
+                )}
+              </div>
+            }
+          >
+            <TextArea
+              placeholder="请输入导入地址&#10;支持多行输入，每行一个地址"
+              rows={3}
+              onChange={handleImportUrlChange}
+              style={{ fontSize: '11px', resize: 'vertical' }}
+            />
+          </Form.Item>
+        )}
+
+        {/* 数据集选择 - 仅当导入方式为"数据集"时显示 */}
+        {config.importType === '数据集' && (
+          <Form.Item 
+            name="selectedDataset"
+            rules={[{ required: true, message: '请选择数据集' }]}
+            style={{ marginBottom: '8px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>选择数据集 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          >
+            <Select
+              placeholder="请选择数据集"
+              value={selectedDataset?.id}
+              onChange={handleDatasetChange}
+              loading={isLoadingDatasets}
+              disabled={isLoadingDatasets}
+              notFoundContent={isLoadingDatasets ? <Spin size="small" /> : '暂无数据集'}
+              style={{ width: '100%', fontSize: '11px' }}
+            >
+              {datasets.map((dataset: any) => (
+                <Option key={dataset.id} value={dataset.id}>
+                  {dataset.name} ({dataset.storageType}) - {dataset.latestVersion}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        )}
+
+        {/* 数据集版本选择 - 仅当导入方式为"数据集"且已选择数据集时显示 */}
+        {config.importType === '数据集' && selectedDataset && (
+          <Form.Item 
+            name="datasetVersion"
+            rules={[{ required: true, message: '请选择数据集版本' }]}
+            style={{ marginBottom: '8px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>数据集版本 <span style={{ color: '#ff4d4f' }}>*</span></span>}
+          >
+            <Select
+              placeholder="请选择数据集版本"
+              value={config.datasetVersion}
+              onChange={handleDatasetVersionChange}
+              loading={isLoadingDatasetVersions}
+              disabled={isLoadingDatasetVersions}
+              notFoundContent={isLoadingDatasetVersions ? <Spin size="small" /> : '暂无版本'}
+              style={{ width: '100%', fontSize: '11px' }}
+            >
+              {datasetVersions.map((version: any) => (
+                <Option key={version.versionId} value={version.versionId}>
+                  {version.versionName} - {version.description || '无描述'}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        )}
+
+        {/* Access Token - 仅当导入方式不为"数据集"时显示 */}
+        {config.importType !== '数据集' && (
+          <Form.Item 
+            name="accessToken"
+            style={{ marginBottom: '8px' }}
+            label={<span style={{ fontSize: '11px', color: '#666' }}>Access Token</span>}
+            extra={<span style={{ fontSize: '10px', color: '#999' }}>用于访问私有模型/数据集，选填</span>}
+          >
+            <Input.Password
+              placeholder="请输入Access Token（选填）"
+              value={config.accessToken}
+              onChange={handleAccessTokenChange}
+              style={{ fontSize: '11px' }}
+              visibilityToggle
+            />
+          </Form.Item>
+        )}
 
         {/* 资源池类型 */}
         <Form.Item 

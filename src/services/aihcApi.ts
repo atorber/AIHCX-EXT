@@ -1158,6 +1158,31 @@ class AIHCApiService {
       }, 10000);
     });
   }
+
+  // 获取数据集列表
+  async getDatasets(): Promise<any[]> {
+    try {
+      const response = await fetch(
+        `https://console.bce.baidu.com/api/aihc/asset/v1/datasets?keywordType=name&keyword=&pageNo=1&pageSize=100&locale=zh-cn&_=${Date.now()}`,
+        { credentials: 'include' }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.result && data.result.datasets) {
+        return data.result.datasets;
+      } else {
+        throw new Error('获取数据集列表失败');
+      }
+    } catch (error) {
+      console.error('获取数据集列表失败:', error);
+      throw error;
+    }
+  }
 }
 
 export const aihcApiService = new AIHCApiService();
