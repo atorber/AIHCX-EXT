@@ -300,8 +300,13 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     form.setFieldsValue({ targetDatasetVersion: value });
     
     // 设置选中版本的详细信息
-    const selectedVersion = datasetVersions.find(version => version.versionId === value);
+    const selectedVersion = datasetVersions.find(version => version.datasetVersion === value);
     setSelectedVersionInfo(selectedVersion || null);
+    
+    // 如果已经选择了资源池，需要重新验证PFS实例绑定
+    if (config.resourcePoolId && config.resourcePoolType) {
+      validateResourcePoolForPFS(config.resourcePoolId, config.resourcePoolType);
+    }
   };
 
   // 处理源数据集版本变化
@@ -364,10 +369,8 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
       // 获取选中资源池的PFS实例信息（用于显示）
       fetchResourcePoolPfsInstances(value, config.resourcePoolType);
       
-      // 如果是数据集导入模式且涉及PFS类型，需要验证资源池的PFS实例绑定
-      if (config.importType === '数据集' && selectedDataset) {
-        validateResourcePoolForPFS(value, config.resourcePoolType);
-      }
+      // 验证资源池的PFS实例绑定（只要有PFS类型的数据集就需要验证）
+      validateResourcePoolForPFS(value, config.resourcePoolType);
       fetchQueues(value, config.resourcePoolType);
     } else {
       // 清空PFS实例信息
@@ -536,12 +539,40 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
         resourcePoolId,
         resourcePoolType,
         selectedDataset,
-        datasetInfo
+        datasetInfo,
+        targetDatasetVersion: config.targetDatasetVersion
       });
 
-      // 检查源数据集和目标数据集是否都是PFS类型
-      const isSourcePFS = selectedDataset?.storageType?.toUpperCase() === 'PFS';
-      const isTargetPFS = datasetInfo?.datasetType?.toUpperCase() === 'PFS';
+      // 检查源数据集和目标数据集版本是否涉及PFS类型
+      let isSourcePFS = false;
+      let isTargetPFS = false;
+      
+      // 检查源数据集是否为PFS类型（仅在数据集导入模式下）
+      if (config.importType === '数据集' && selectedDataset?.storageType?.toUpperCase() === 'PFS') {
+        isSourcePFS = true;
+      }
+      
+      // 检查目标数据集版本是否为PFS类型
+      // 首先从目标数据集版本信息中查找
+      if (config.targetDatasetVersion) {
+        const targetVersionInfo = datasetVersions.find(v => v.datasetVersion === config.targetDatasetVersion);
+        if (targetVersionInfo?.datasetType?.toUpperCase() === 'PFS') {
+          isTargetPFS = true;
+        }
+      }
+      
+      // 如果目标数据集版本信息中没有找到，尝试从datasetInfo中获取
+      if (!isTargetPFS && datasetInfo?.datasetType?.toUpperCase() === 'PFS') {
+        isTargetPFS = true;
+      }
+      
+      console.log('🔍 PFS类型检查结果:', {
+        isSourcePFS,
+        isTargetPFS,
+        importType: config.importType,
+        sourceStorageType: selectedDataset?.storageType,
+        targetVersionInfo: datasetVersions.find(v => v.datasetVersion === config.targetDatasetVersion)?.datasetType
+      });
       
       if (!isSourcePFS && !isTargetPFS) {
         console.log('✅ 源数据集和目标数据集都不是PFS类型，无需验证');
@@ -561,9 +592,15 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
         console.log('🔍 需要源数据集PFS实例:', selectedDataset.storageInstance);
       }
       
-      if (isTargetPFS && datasetInfo?.storageInstance) {
-        requiredPfsInstances.add(datasetInfo.storageInstance);
-        console.log('🔍 需要目标数据集PFS实例:', datasetInfo.storageInstance);
+      if (isTargetPFS) {
+        // 优先从目标数据集版本信息中获取存储实例
+        const targetVersionInfo = datasetVersions.find(v => v.datasetVersion === config.targetDatasetVersion);
+        const targetStorageInstance = targetVersionInfo?.storageInstance || datasetInfo?.storageInstance;
+        
+        if (targetStorageInstance) {
+          requiredPfsInstances.add(targetStorageInstance);
+          console.log('🔍 需要目标数据集PFS实例:', targetStorageInstance);
+        }
       }
 
       // 检查资源池是否绑定了所有需要的PFS实例
@@ -599,8 +636,8 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
       setError('');
       setShowResult(false);
 
-      // 如果是数据集导入模式且涉及PFS类型，进行最终验证
-      if (values.importType === '数据集' && selectedDataset && values.resourcePoolId) {
+      // 进行PFS实例绑定验证（只要有PFS类型的数据集就需要验证）
+      if (values.resourcePoolId) {
         const isValid = await validateResourcePoolForPFS(values.resourcePoolId, values.resourcePoolType);
         if (!isValid) {
           setIsSubmitting(false);
