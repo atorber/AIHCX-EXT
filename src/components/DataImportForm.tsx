@@ -201,7 +201,7 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
   };
 
   // 获取队列列表
-  const fetchQueues = async (resourcePoolId: string) => {
+  const fetchQueues = async (resourcePoolId: string, resourcePoolType?: '自运维' | '全托管') => {
     const manager = requestManagerRef.current;
     
     if (manager.queuesController) {
@@ -215,8 +215,11 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     setIsLoadingQueues(true);
     setError('');
     
+    // 使用传入的资源池类型，如果没有则使用当前配置中的类型
+    const poolType = resourcePoolType || config.resourcePoolType;
+    
     try {
-      const queues = config.resourcePoolType === '自运维'
+      const queues = poolType === '自运维'
         ? await aihcApiService.getSelfManagedQueues(resourcePoolId, manager.queuesController)
         : await aihcApiService.getFullyManagedQueues(manager.queuesController);
       
@@ -275,11 +278,14 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
   };
 
   // 处理导入方式变化
-  const handleImportTypeChange = () => {
-    // 清空导入地址字段
-    form.setFieldsValue({
-      importUrl: ''
-    });
+  const handleImportTypeChange = (value: string) => {
+    const updatedConfig = { 
+      ...config, 
+      importType: value as 'HuggingFace' | 'ModelScope' | '数据集',
+      importUrl: '' // 切换导入方式时清空导入地址
+    };
+    setConfig(updatedConfig);
+    form.setFieldsValue(updatedConfig);
   };
 
   // 处理资源池类型变化
@@ -312,7 +318,7 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     setQueues([]);
     
     if (value) {
-      fetchQueues(value);
+      fetchQueues(value, config.resourcePoolType);
     }
   };
 
@@ -536,6 +542,7 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
         >
           <Select
             placeholder="请选择导入方式"
+            value={config.importType}
             onChange={handleImportTypeChange}
             style={{ width: '100%', fontSize: '11px' }}
           >

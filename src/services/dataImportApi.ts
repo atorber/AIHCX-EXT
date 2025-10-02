@@ -131,6 +131,8 @@ const generateImportCommand = (importType: string, importUrl: string): string =>
   switch (importType) {
     case 'HuggingFace':
       return `echo "🚀 开始从HuggingFace下载数据..." \
+        && echo "📦 安装HuggingFace依赖..." \
+        && pip install datasets huggingface_hub -q \
         && START_TIME=$(date +%s) \
         && python -c "
 import os
@@ -212,12 +214,27 @@ for url in urls:
 
     case 'ModelScope':
       return `echo "🚀 开始从ModelScope下载数据..." \
+        && echo "📦 安装ModelScope依赖..." \
+        && pip install modelscope -q \
         && START_TIME=$(date +%s) \
         && python -c "
 import os
 import sys
+import time
 from modelscope import MsDataset
 from modelscope.hub.snapshot_download import snapshot_download
+
+def download_with_retry(func, *args, **kwargs):
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f'⚠️ 尝试 {attempt + 1}/{max_retries} 失败: {e}')
+            if attempt < max_retries - 1:
+                time.sleep(2 ** attempt)  # 指数退避
+            else:
+                raise e
 
 urls = '''${importUrl}'''.strip().split('\\n')
 for url in urls:
@@ -227,15 +244,30 @@ for url in urls:
             # 尝试作为数据集下载
             if '/datasets/' in url:
                 dataset_name = url.split('/datasets/')[-1]
-                dataset = MsDataset.load(dataset_name)
+                print(f'🔍 尝试下载数据集: {dataset_name}')
+                dataset = download_with_retry(MsDataset.load, dataset_name)
                 print(f'✅ 数据集 {dataset_name} 下载完成')
             else:
                 # 作为模型下载
                 model_name = url.split('modelscope.cn/')[-1]
-                snapshot_download(model_name, cache_dir=f'/mnt/output/{model_name}')
-                print(f'✅ 模型 {model_name} 下载完成')
+                print(f'🔍 尝试下载模型: {model_name}')
+                
+                # 使用正确的snapshot_download参数
+                model_dir = download_with_retry(snapshot_download, model_name)
+                print(f'✅ 模型 {model_name} 下载完成，保存到: {model_dir}')
+                
+                # 将模型文件复制到挂载目录
+                import shutil
+                target_dir = f'/mnt/output/{model_name}'
+                if os.path.exists(model_dir):
+                    shutil.copytree(model_dir, target_dir, dirs_exist_ok=True)
+                    print(f'📁 模型文件已复制到: {target_dir}')
+                else:
+                    print(f'⚠️ 模型目录不存在: {model_dir}')
+                    
         except Exception as e:
             print(f'❌ 下载失败 {url}: {e}')
+            print(f'💡 建议检查: 1) 网络连接 2) 模型/数据集是否存在 3) 是否需要认证')
 " \
         && END_TIME=$(date +%s) \
         && DIFF=$((END_TIME - START_TIME)) \
@@ -243,6 +275,8 @@ for url in urls:
 
     case '数据集':
       return `echo "🚀 开始从其他数据集源下载数据..." \
+        && echo "📦 安装下载依赖..." \
+        && pip install requests -q \
         && START_TIME=$(date +%s) \
         && python -c "
 import os
