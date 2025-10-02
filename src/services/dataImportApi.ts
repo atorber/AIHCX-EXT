@@ -135,8 +135,22 @@ const generateImportCommand = (importType: string, importUrl: string): string =>
         && python -c "
 import os
 import sys
+import time
 from datasets import load_dataset
-from huggingface_hub import snapshot_download
+from huggingface_hub import snapshot_download, hf_hub_download
+from huggingface_hub.utils import HfHubHTTPError
+
+def download_with_retry(func, *args, **kwargs):
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f'⚠️ 尝试 {attempt + 1}/{max_retries} 失败: {e}')
+            if attempt < max_retries - 1:
+                time.sleep(2 ** attempt)  # 指数退避
+            else:
+                raise e
 
 urls = '''${importUrl}'''.strip().split('\\n')
 for url in urls:
@@ -146,15 +160,51 @@ for url in urls:
             # 尝试作为数据集下载
             if '/datasets/' in url:
                 dataset_name = url.split('/datasets/')[-1]
-                dataset = load_dataset(dataset_name)
+                print(f'🔍 尝试下载数据集: {dataset_name}')
+                dataset = download_with_retry(load_dataset, dataset_name)
                 print(f'✅ 数据集 {dataset_name} 下载完成')
             else:
                 # 作为模型下载
                 model_name = url.split('huggingface.co/')[-1]
-                snapshot_download(repo_id=model_name, local_dir=f'/mnt/output/{model_name}')
-                print(f'✅ 模型 {model_name} 下载完成')
+                print(f'🔍 尝试下载模型: {model_name}')
+                
+                # 首先尝试获取模型信息
+                try:
+                    from huggingface_hub import model_info
+                    info = model_info(model_name)
+                    print(f'📋 模型信息: {info.id}, 类型: {info.pipeline_tag or \"未知\"}')
+                except Exception as e:
+                    print(f'⚠️ 无法获取模型信息: {e}')
+                
+                # 尝试不同的下载方式
+                try:
+                    # 方式1: 使用snapshot_download下载整个仓库
+                    download_with_retry(snapshot_download, 
+                                      repo_id=model_name, 
+                                      local_dir=f'/mnt/output/{model_name}',
+                                      resume_download=True)
+                    print(f'✅ 模型 {model_name} 下载完成 (snapshot_download)')
+                except Exception as e1:
+                    print(f'⚠️ snapshot_download 失败: {e1}')
+                    try:
+                        # 方式2: 尝试下载主要文件
+                        main_files = ['config.json', 'tokenizer.json', 'tokenizer_config.json']
+                        for file in main_files:
+                            try:
+                                download_with_retry(hf_hub_download, 
+                                                  repo_id=model_name, 
+                                                  filename=file,
+                                                  local_dir=f'/mnt/output/{model_name}')
+                                print(f'✅ 下载文件: {file}')
+                            except Exception as e2:
+                                print(f'⚠️ 文件 {file} 下载失败: {e2}')
+                        print(f'✅ 模型 {model_name} 部分文件下载完成')
+                    except Exception as e2:
+                        print(f'❌ 所有下载方式都失败了: {e2}')
+                        raise e1
         except Exception as e:
             print(f'❌ 下载失败 {url}: {e}')
+            print(f'💡 建议检查: 1) 网络连接 2) 模型是否存在 3) 是否需要认证')
 " \
         && END_TIME=$(date +%s) \
         && DIFF=$((END_TIME - START_TIME)) \
