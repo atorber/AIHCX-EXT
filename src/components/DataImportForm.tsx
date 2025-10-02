@@ -56,7 +56,12 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
   const [selectedSourceVersionInfo, setSelectedSourceVersionInfo] = useState<any>(null); // 源数据集版本信息
   const [datasetInfo, setDatasetInfo] = useState<any>(null);
   const [selectedDataset, setSelectedDataset] = useState<any>(null); // 选中的数据集
-  const [selectedResourcePoolPfsInstances, setSelectedResourcePoolPfsInstances] = useState<any[]>([]); // 选中资源池的PFS实例
+  const [selectedResourcePoolPfsInstances, setSelectedResourcePoolPfsInstances] = useState<any[]>([]);
+  const [pfsValidationStatus, setPfsValidationStatus] = useState<{
+    isValid: boolean;
+    missingInstances: string[];
+    requiredInstances: string[];
+  } | null>(null); // 选中资源池的PFS实例
   
   // 请求管理器
   const requestManagerRef = useRef<RequestManager>({
@@ -292,6 +297,27 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     }
     fetchResourcePools('自运维');
   }, [datasetId]);
+
+  // 监听关键状态变化，执行PFS校验
+  useEffect(() => {
+    // 当资源池、目标数据集版本、源数据集等关键信息都准备好时，执行PFS校验
+    if (config.resourcePoolId && config.resourcePoolType) {
+      // 延迟执行，确保所有状态都已更新
+      const timer = setTimeout(() => {
+        validateResourcePoolForPFS(config.resourcePoolId, config.resourcePoolType);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [
+    config.resourcePoolId, 
+    config.resourcePoolType, 
+    config.targetDatasetVersion, 
+    config.sourceDatasetVersion,
+    selectedDataset,
+    datasetVersions,
+    datasetInfo
+  ]);
 
   // 处理目标数据集版本变化
   const handleTargetDatasetVersionChange = (value: string) => {
@@ -576,6 +602,8 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
       
       if (!isSourcePFS && !isTargetPFS) {
         console.log('✅ 源数据集和目标数据集都不是PFS类型，无需验证');
+        // 清除PFS校验状态
+        setPfsValidationStatus(null);
         return true;
       }
 
@@ -609,16 +637,20 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
         instanceId => !boundPfsInstances.includes(instanceId)
       );
 
+      // 更新PFS校验状态
+      const validationStatus = {
+        isValid: missingInstances.length === 0,
+        missingInstances,
+        requiredInstances: Array.from(requiredPfsInstances)
+      };
+      setPfsValidationStatus(validationStatus);
+
       if (missingInstances.length > 0) {
-        const errorMessage = `资源池未绑定所需的PFS实例: ${missingInstances.join(', ')}。请选择绑定了源数据集和目标数据集PFS实例的资源池。`;
-        setError(errorMessage);
-        message.error(errorMessage);
-        console.error('❌ PFS实例验证失败:', missingInstances);
+        console.warn('⚠️ PFS实例验证失败:', missingInstances);
         return false;
       }
 
       console.log('✅ PFS实例验证通过');
-      setError(''); // 清除之前的错误信息
       return true;
 
     } catch (err) {
@@ -640,6 +672,8 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
       if (values.resourcePoolId) {
         const isValid = await validateResourcePoolForPFS(values.resourcePoolId, values.resourcePoolType);
         if (!isValid) {
+          // PFS校验失败时，通过按钮禁用控制，不阻止提交逻辑
+          console.warn('PFS实例绑定验证失败，提交按钮已禁用');
           setIsSubmitting(false);
           return;
         }
@@ -770,6 +804,28 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     }
   };
 
+  // 计算提交按钮是否应该禁用
+  const isSubmitDisabled = () => {
+    // 如果正在提交，则禁用提交按钮
+    if (isSubmitting) {
+      console.log('🔘 提交按钮禁用原因: 正在提交中');
+      return true;
+    }
+    
+    // 如果有PFS校验状态且校验失败，则禁用提交按钮
+    if (pfsValidationStatus && !pfsValidationStatus.isValid) {
+      console.log('🔘 提交按钮禁用原因: PFS校验失败', pfsValidationStatus);
+      return true;
+    }
+    
+    console.log('✅ 提交按钮启用状态:', { 
+      isSubmitting, 
+      pfsValidationStatus: pfsValidationStatus?.isValid,
+      hasPfsValidation: !!pfsValidationStatus 
+    });
+    return false;
+  };
+
   const handleReset = () => {
     form.resetFields();
     setError('');
@@ -793,6 +849,7 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
     setSelectedSourceVersionInfo(null);
     setSelectedDataset(null);
     setSelectedResourcePoolPfsInstances([]); // 清空PFS实例信息
+    setPfsValidationStatus(null); // 清空PFS校验状态
     if (datasetId) {
       fetchTargetDatasetVersions();
     }
@@ -1166,6 +1223,41 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
           </div>
         )}
 
+        {/* PFS实例绑定校验状态显示 */}
+        {config.resourcePoolId && pfsValidationStatus && pfsValidationStatus.requiredInstances.length > 0 && (
+          <div style={{ 
+            marginBottom: '8px',
+            padding: '8px',
+            backgroundColor: pfsValidationStatus.isValid ? '#f6ffed' : '#fff2e8',
+            borderRadius: '4px',
+            border: `1px solid ${pfsValidationStatus.isValid ? '#b7eb8f' : '#ffbb96'}`
+          }}>
+            <div style={{ 
+              fontSize: '11px', 
+              color: pfsValidationStatus.isValid ? '#52c41a' : '#fa8c16',
+              marginBottom: '4px',
+              fontWeight: 'bold'
+            }}>
+              {pfsValidationStatus.isValid ? '✅ PFS实例绑定校验通过' : '⚠️ PFS实例绑定校验失败'}
+            </div>
+            <div style={{ fontSize: '10px', color: '#495057' }}>
+              <div style={{ marginBottom: '2px' }}>
+                <strong>需要的PFS实例:</strong> {pfsValidationStatus.requiredInstances.join(', ')}
+              </div>
+              {!pfsValidationStatus.isValid && (
+                <div>
+                  <div style={{ color: '#ff4d4f', marginBottom: '2px' }}>
+                    <strong>缺失的PFS实例:</strong> {pfsValidationStatus.missingInstances.join(', ')}
+                  </div>
+                  <div style={{ color: '#ff4d4f', fontSize: '9px' }}>
+                    ⚠️ 请选择绑定了所需PFS实例的资源池，否则无法提交任务
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* 选中资源池无PFS实例提示 */}
         {config.resourcePoolId && selectedResourcePoolPfsInstances.length === 0 && (
           <div style={{ 
@@ -1307,6 +1399,7 @@ const DataImportForm: React.FC<DataImportFormProps> = ({ datasetId, onSubmit }) 
             htmlType="submit"
             onClick={handleSubmit}
             loading={isSubmitting}
+            disabled={isSubmitDisabled()}
             icon={<SendOutlined />}
             style={{ fontSize: '11px', height: '28px', flex: 1 }}
           >

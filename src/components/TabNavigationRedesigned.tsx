@@ -82,7 +82,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
     },
     { 
       key: 'dataImport' as TabType, 
-      label: '导入数据(开发中)', 
+      label: '导入数据', 
       icon: <CloudDownloadOutlined />,
       condition: pageName === '数据集详情' && !!taskParams.datasetId,
       count: taskParams.datasetId ? 1 : 0,
