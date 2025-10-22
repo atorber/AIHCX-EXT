@@ -41,7 +41,7 @@ export const createDataDumpTask = async (config: DataDumpTaskConfig): Promise<Ta
     console.log('创建数据转储任务:', config);
 
     // 构建OpenAPI任务配置
-    const taskConfig = {
+    const taskConfig: any = {
       name: `data-dump-${config.datasetId}-${Date.now()}`,
       jobType: 'PyTorchJob',
       command: 'echo "🚀 开始数据转储操作..." \
@@ -86,6 +86,11 @@ export const createDataDumpTask = async (config: DataDumpTaskConfig): Promise<Ta
         }
       ]
     };
+    
+    // 如果是自运维资源池，添加队列名称到任务配置中
+    if (config.resourcePoolType === '自运维' && config.queueId) {
+      taskConfig.queue = config.queueId; // 对于自运维资源池，queueId实际存储的是队列名称
+    }
 
     // 打印详细的请求参数
     console.log('🔍 详细请求参数:');

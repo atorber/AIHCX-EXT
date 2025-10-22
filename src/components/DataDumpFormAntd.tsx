@@ -266,8 +266,12 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
         
         // 使用函数式更新来获取最新的config状态
         setConfig(currentConfig => {
+          // 根据资源池类型决定使用队列名称还是队列ID
+          const getQueueValue = (queue: Queue) => 
+            currentConfig.resourcePoolType === '自运维' ? queue.queueName : queue.queueId;
+          
           // 如果当前选择的队列不在新列表中，清空选择
-          if (currentConfig.queueId && !queues.find((queue: Queue) => queue.queueId === currentConfig.queueId)) {
+          if (currentConfig.queueId && !queues.find((queue: Queue) => getQueueValue(queue) === currentConfig.queueId)) {
             const updatedConfig = { ...currentConfig, queueId: '', pfsId: '' };
             form.setFieldsValue(updatedConfig);
             setPfsInstances([]);
@@ -277,7 +281,7 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
             const firstQueue = queues[0];
             const updatedConfig = { 
               ...currentConfig, 
-              queueId: firstQueue.queueId,
+              queueId: getQueueValue(firstQueue),
               pfsId: ''
             };
             form.setFieldsValue(updatedConfig);
@@ -649,7 +653,10 @@ const DataDumpForm: React.FC<DataDumpFormProps> = ({
             style={{ width: '100%', fontSize: '11px' }}
           >
             {queues.map((queue: Queue) => (
-              <Option key={queue.queueId} value={queue.queueId}>
+              <Option 
+                key={queue.queueId} 
+                value={config.resourcePoolType === '自运维' ? queue.queueName : queue.queueId}
+              >
                 {queue.queueName} ({queue.phase})
               </Option>
             ))}
