@@ -46,7 +46,7 @@ export const createDataDumpTask = async (config: DataDumpTaskConfig): Promise<Ta
       jobType: 'PyTorchJob',
       command: 'echo "🚀 开始数据转储操作..." \
         && START_TIME=$(date +%s) \
-        && cp -vr /mnt/bos/* /mnt/pfs/ \
+        && rsync -a --info=progress2 --no-inc-recursive /mnt/bos/ /mnt/pfs/ \
         && END_TIME=$(date +%s) \
         && DIFF=$((END_TIME - START_TIME)) \
         && echo "✅ 数据转储完成！耗时: ${DIFF}秒"',
