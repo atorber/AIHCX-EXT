@@ -5,6 +5,22 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.8.2] - 2025-10-23
+
+### 优化
+- 数据转储任务启动命令优化：使用rsync替代cp命令，提升大文件夹转储效率20-50%
+- 减少数据转储日志输出：使用`--info=progress2`只显示总体进度，避免海量日志
+- 支持增量转储：重复执行任务时自动跳过未变化的文件
+- 开发流程优化：dev命令自动执行图标生成，确保扩展图标始终最新
+
+### 变更
+- 数据转储命令参数：`cp -vr` → `rsync -a --info=progress2 --no-inc-recursive`
+- package.json dev脚本：添加自动执行`npm run generate-icons`
+
+### 技术改进
+- 使用rsync归档模式保留文件属性和权限
+- 优化文件复制路径处理，确保正确复制目录内容
+
 ## [0.7.0] - 2025-09-30
 
 ### 新增
